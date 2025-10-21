@@ -45,7 +45,7 @@ const QuickReadPage: React.FC = () => {
                 id: crypto.randomUUID(),
                 date: new Date().toISOString().split('T')[0],
                 userInput,
-                ...result,
+                ...data.result, 
             };
             setHistory(prev => [newEntry, ...prev]);
             setUserInput('');
