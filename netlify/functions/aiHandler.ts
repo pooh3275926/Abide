@@ -57,7 +57,7 @@ export async function handler(event: any) {
 
       // 快速讀經
       case 'quickRead': {
-        const prompt = `你是一位聖經研究助理。請根據使用者輸入「${payload.userInput}」生成 JSON：{ analysis, application, prayer }`;
+        const prompt = `你是一位聖經研究助理。請根據使用者輸入（使用繁體中文）「${payload.userInput}」生成 JSON：{ analysis, application, prayer }`;
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
@@ -80,7 +80,7 @@ export async function handler(event: any) {
 
       // 福音卡片
       case 'jesusSaidCard': {
-        const prompt = `生成福音卡片 JSON: {verse, message, prayer}`;
+        const prompt = `生成福音卡片（使用繁體中文） JSON: {verse, message, prayer}`;
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
@@ -112,4 +112,5 @@ export async function handler(event: any) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message || 'AI 生成失敗' }) };
   }
 }
+
 
