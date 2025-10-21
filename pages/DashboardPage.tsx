@@ -124,8 +124,17 @@ const INeedYouPage: React.FC = () => {
     setPrayer('');
 
     try {
-      const generatedPrayer = await generateSituationalPrayer(situation);
-      setPrayer(generatedPrayer);
+      const res = await fetch('/.netlify/functions/aiHandler', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         action: 'situationalPrayer',
+         payload: { situation }
+       })
+     });
+     const data = await res.json();
+     const generatedPrayer = data.result;
+     setPrayer(generatedPrayer);
 
       const newPrayerRecord: SituationalPrayer = {
         id: crypto.randomUUID(),

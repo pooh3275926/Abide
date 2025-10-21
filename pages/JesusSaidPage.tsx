@@ -89,7 +89,17 @@ const JesusSaidPage: React.FC = () => {
         setError('');
 
         try {
-            const cardContent = await generateJesusSaidCard();
+            const res = await fetch('/.netlify/functions/aiHandler', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+               action: 'jesusSaidCard', 
+               payload: {}              
+             })
+            });
+
+            const data = await res.json();
+            const cardContent: Omit<JesusSaidCard, 'id' | 'date'> = data.result;
             const newCard: JesusSaidCard = {
                 id: crypto.randomUUID(),
                 date: new Date().toISOString().split('T')[0],

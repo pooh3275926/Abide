@@ -30,8 +30,16 @@ const QuickReadPage: React.FC = () => {
         setCurrentResult(null);
 
         try {
-            const result = await generateQuickRead(userInput);
-            setCurrentResult(result);
+            const res = await fetch('/.netlify/functions/aiHandler', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'quickRead',
+                payload: { userInput }
+              })
+            });
+            const data = await res.json();
+            setCurrentResult(data.result);
 
             const newEntry: QuickReadEntry = {
                 id: crypto.randomUUID(),

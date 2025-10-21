@@ -44,22 +44,46 @@ const JournalForm: React.FC<{
 
   const handleGenerateAnalysis = async () => {
     setIsGenerating(prev => ({ ...prev, analysis: true }));
-    const content = await generateScriptureAnalysis(formData.book, formData.chapter);
-    setFormData(prev => ({ ...prev, scriptureAnalysis: content }));
+    const res = await fetch('/.netlify/functions/aiHandler', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'scriptureAnalysis',
+        payload: { book: formData.book, chapter: formData.chapter }
+      })
+    });
+    const data = await res.json();
+    setFormData(prev => ({ ...prev, scriptureAnalysis: data.result }));
     setIsGenerating(prev => ({ ...prev, analysis: false }));
   };
 
   const handleGenerateApplication = async () => {
     setIsGenerating(prev => ({ ...prev, application: true }));
-    const content = await generateApplication(formData.book, formData.chapter);
-    setFormData(prev => ({ ...prev, applicationHelper: content }));
+    const res = await fetch('/.netlify/functions/aiHandler', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'applicationHelper',
+        payload: { book: formData.book, chapter: formData.chapter }
+      })
+    });
+    const data = await res.json();
+    setFormData(prev => ({ ...prev, applicationHelper: data.result }));
     setIsGenerating(prev => ({ ...prev, application: false }));
   };
 
   const handleGeneratePrayer = async () => {
     setIsGenerating(prev => ({ ...prev, prayer: true }));
-    const content = await generatePrayer(formData.book, formData.chapter, formData.highlights);
-    setFormData(prev => ({ ...prev, prayer: content }));
+    const res = await fetch('/.netlify/functions/aiHandler', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'situationalPrayer',
+        payload: { book: formData.book, chapter: formData.chapter, highlights: formData.highlights }
+      })
+    });
+    const data = await res.json();
+    setFormData(prev => ({ ...prev, prayer: data.result }));
     setIsGenerating(prev => ({ ...prev, prayer: false }));
   };
 
