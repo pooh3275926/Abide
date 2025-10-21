@@ -133,7 +133,7 @@ const INeedYouPage: React.FC = () => {
        })
      });
      const data = await res.json();
-     const generatedPrayer = data.result;
+     const generatedPrayer = data.result ?? 'AI 功能暫不可用，請稍後再試。';
      setPrayer(generatedPrayer);
 
       const newPrayerRecord: SituationalPrayer = {
