@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
   console.warn("Gemini API key not found. AI features will be disabled.");
@@ -84,3 +84,4 @@ export async function handler(event: any) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message || 'AI 生成失敗' }) };
   }
 }
+
