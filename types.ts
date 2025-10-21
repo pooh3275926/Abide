@@ -41,3 +41,12 @@ export interface JesusSaidCard {
   message: string;
   prayer: string;
 }
+
+export interface QuickReadEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  userInput: string; // The original input from the user
+  analysis: string;
+  application: string;
+  prayer: string;
+}

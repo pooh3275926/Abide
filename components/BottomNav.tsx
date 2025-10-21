@@ -31,6 +31,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activePage, setActivePage }) => {
     { page: 'journal', label: '日記', icon: '📝' },
     { page: 'prayer', label: '禱告清單', icon: '🤲🏻' },
     { page: 'jesusSaid', label: '耶穌說', icon: '💌' },
+    { page: 'quickRead', label: '快速讀經', icon: '⚡️' },
   ];
 
   return (

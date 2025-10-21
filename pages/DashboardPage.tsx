@@ -49,24 +49,32 @@ const INeedYouPage: React.FC = () => {
   const [editingPrayer, setEditingPrayer] = useState<SituationalPrayer | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
+  const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
+
+  // 新增狀態
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // 刪除禱告
-  const handleDeleteRequest = (id: string) => {
-    setItemToDeleteId(id);
+  const handleDeleteRequest = (ids: Set<string>) => {
+    if (ids.size === 0) return;
+    setItemsToDelete(ids);
     setShowConfirmation(true);
   };
 
   const handleConfirmDelete = () => {
-    if (itemToDeleteId) {
-      setPrayerHistory(prev => prev.filter(p => p.id !== itemToDeleteId));
+    if (itemsToDelete.size > 0) {
+      setPrayerHistory(prev => prev.filter(p => !itemsToDelete.has(p.id)));
     }
-    setItemToDeleteId(null);
+    setItemsToDelete(new Set());
     setShowConfirmation(false);
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
   };
 
   const handleCancelDelete = () => {
-    setItemToDeleteId(null);
+    setItemsToDelete(new Set());
     setShowConfirmation(false);
   };
 
@@ -75,8 +83,35 @@ const INeedYouPage: React.FC = () => {
     const lowerSearch = searchTerm.toLowerCase();
     return prayerHistory
       .filter(p => !searchTerm || p.situation.toLowerCase().includes(lowerSearch) || p.prayer.toLowerCase().includes(lowerSearch))
-      .sort((a, b) => b.date.localeCompare(a.date));
-  }, [prayerHistory, searchTerm]);
+      .sort((a, b) => {
+        if (sortOrder === 'desc') {
+          return b.date.localeCompare(a.date);
+        }
+        return a.date.localeCompare(b.date);
+      });
+  }, [prayerHistory, searchTerm, sortOrder]);
+  
+  // 多選邏輯
+  const handleToggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if(selectedIds.size === filteredHistory.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredHistory.map(p => p.id)));
+    }
+  }
+
 
   // 生成禱告
   const handleGeneratePrayer = async () => {
@@ -173,24 +208,62 @@ const INeedYouPage: React.FC = () => {
       <div className="mt-12 text-left">
         <h3 className="text-xl font-bold text-gold-dark dark:text-gold-light mb-4 text-center">禱告紀錄</h3>
 
-        <input
-          type="text"
-          placeholder="搜尋狀況或禱告內容..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600 mb-4"
-        />
+        {/* 控制列 */}
+        <div className="flex justify-between items-center mb-4 gap-2 p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
+        {!isSelectMode ? (
+          <>
+            <input
+              type="text"
+              placeholder="搜尋狀況或禱告..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-grow p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
+            />
+            <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-300 dark:bg-gray-700 whitespace-nowrap text-sm">
+              {sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}
+            </button>
+            <button onClick={() => { setIsSelectMode(true); setSelectedIds(new Set()); }} className="p-2 rounded-lg bg-beige-300 dark:bg-gray-700 whitespace-nowrap text-sm">
+              多選
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">
+              取消
+            </button>
+            <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
+            <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">
+              刪除
+            </button>
+          </>
+        )}
+        </div>
 
         <div className="space-y-4">
           {filteredHistory.length > 0 ? filteredHistory.map(p => {
-            const isExpanded = expandedPrayerId === p.id;
+            const isExpanded = expandedPrayerId === p.id && !isSelectMode;
             return (
-              <div key={p.id} className="bg-beige-50 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300">
+              <div 
+                key={p.id} 
+                className={`relative bg-beige-50 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 ${isSelectMode ? 'pl-10' : ''} ${selectedIds.has(p.id) ? 'ring-2 ring-gold-DEFAULT' : ''}`}
+              >
+                {isSelectMode && (
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <input 
+                      type="checkbox"
+                      className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark"
+                      checked={selectedIds.has(p.id)}
+                      onChange={() => handleToggleSelection(p.id)}
+                      aria-label={`Select prayer from ${p.date}`}
+                    />
+                  </div>
+                )}
                 <div 
                   className="p-4 cursor-pointer" 
-                  onClick={() => setExpandedPrayerId(isExpanded ? null : p.id)}
-                  role="button" tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setExpandedPrayerId(isExpanded ? null : p.id)}
+                  role="button" 
+                  tabIndex={isSelectMode ? -1 : 0}
+                  onClick={() => isSelectMode ? handleToggleSelection(p.id) : setExpandedPrayerId(isExpanded ? null : p.id)}
+                  onKeyDown={(e) => !isSelectMode && e.key === 'Enter' && setExpandedPrayerId(isExpanded ? null : p.id)}
                   aria-expanded={isExpanded}
                 >
                   <div className="flex justify-between items-start">
@@ -198,7 +271,7 @@ const INeedYouPage: React.FC = () => {
                       <p className="text-sm text-gray-500 dark:text-gray-400">{p.date}</p>
                       <p className="font-semibold mt-1 truncate">狀況：{p.situation}</p>
                     </div>
-                    <span className={`text-xl transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
+                    {!isSelectMode && <span className={`text-xl transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>}
                   </div>
 
                   {isExpanded && (
@@ -214,16 +287,14 @@ const INeedYouPage: React.FC = () => {
                         >
                           {regeneratingId === p.id ? '生成中...' : '↺ 重新生成'}
                         </button>
-
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditingPrayer(p); }}
                           className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded"
                         >
                           ᝰ 編輯
                         </button>
-
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteRequest(p.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([p.id])); }}
                           className="text-xs px-3 py-1 bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-200 rounded hover:bg-red-300 dark:hover:bg-red-700"
                         >
                           ✘ 刪除
@@ -235,7 +306,7 @@ const INeedYouPage: React.FC = () => {
               </div>
             );
           }) : (
-            <p className="text-center text-gray-500 py-4">我們一起禱告吧</p>
+            <p className="text-center text-gray-500 py-4">{searchTerm ? '找不到紀錄' : '我們一起禱告吧'}</p>
           )}
         </div>
       </div>
@@ -252,7 +323,7 @@ const INeedYouPage: React.FC = () => {
       {/* 確認刪除彈窗 */}
       {showConfirmation && (
         <ConfirmationModal
-            message="您確定要刪除這筆禱告紀錄嗎？此操作無法恢復。"
+            message={`您確定要刪除這 ${itemsToDelete.size} 筆禱告紀錄嗎？此操作無法恢復。`}
             onConfirm={handleConfirmDelete}
             onCancel={handleCancelDelete}
         />

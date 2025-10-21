@@ -3,12 +3,13 @@ import INeedYouPage from './pages/DashboardPage'; // Renamed Dashboard to INeedY
 import TrackerPage from './pages/TrackerPage';
 import JournalPage from './pages/JournalPage';
 import PrayerListPage from './pages/PrayerListPage';
-import JesusSaidPage from './pages/JesusSaidPage'; // Import the new page
+import JesusSaidPage from './pages/JesusSaidPage';
+import QuickReadPage from './pages/QuickReadPage'; // Import the new page
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
-export type Page = 'iNeedYou' | 'tracker' | 'journal' | 'prayer' | 'jesusSaid';
+export type Page = 'iNeedYou' | 'tracker' | 'journal' | 'prayer' | 'jesusSaid' | 'quickRead';
 
 const pageTitles: Record<Page, string> = {
   iNeedYou: '我需要祢',
@@ -16,6 +17,7 @@ const pageTitles: Record<Page, string> = {
   journal: '靈修日記',
   prayer: '禱告清單',
   jesusSaid: '耶穌說',
+  quickRead: '快速讀經',
 };
 
 const App: React.FC = () => {
@@ -43,6 +45,8 @@ const App: React.FC = () => {
         return <PrayerListPage />;
       case 'jesusSaid':
         return <JesusSaidPage />;
+      case 'quickRead':
+        return <QuickReadPage />;
       default:
         return <INeedYouPage />;
     }

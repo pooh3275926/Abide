@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { JesusSaidCard } from '../types';
 import { generateJesusSaidCard } from '../services/geminiService';
+import ConfirmationModal from './ConfirmationModal';
 
 // Reusable component to display a single card's content
 const CardDisplay: React.FC<{ card: JesusSaidCard }> = ({ card }) => (
@@ -22,15 +23,44 @@ const CardDisplay: React.FC<{ card: JesusSaidCard }> = ({ card }) => (
 );
 
 // Component for the small card preview in the collection grid
-const CardPreview: React.FC<{ card: JesusSaidCard, onClick: () => void }> = ({ card, onClick }) => (
-    <button
-      onClick={onClick}
-      className="bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md p-4 w-full aspect-[3/4] flex flex-col justify-center items-center text-center hover:shadow-xl hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT"
-      aria-label={`查看卡片: ${card.verse}`}
-    >
-      <p className="text-sm italic text-gold-dark dark:text-gold-light">"{card.verse.split('（')[0]}"</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{card.verse.match(/（(.*)）/)?.[1]}</p>
-    </button>
+const CardPreview: React.FC<{ 
+    card: JesusSaidCard, 
+    onClick: () => void,
+    onDelete: () => void,
+    isSelectMode: boolean,
+    isSelected: boolean,
+    onToggleSelect: () => void
+}> = ({ card, onClick, onDelete, isSelectMode, isSelected, onToggleSelect }) => (
+    <div className="relative">
+        <button
+          onClick={isSelectMode ? onToggleSelect : onClick}
+          className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md p-4 w-full aspect-[3/4] flex flex-col justify-center items-center text-center hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT ${isSelected ? 'ring-2 ring-gold-dark' : ''}`}
+          aria-label={`查看卡片: ${card.verse}`}
+        >
+          <p className="text-sm italic text-gold-dark dark:text-gold-light">"{card.verse.split('（')[0]}"</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{card.verse.match(/（(.*)）/)?.[1]}</p>
+        </button>
+        {!isSelectMode && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="absolute top-1 right-1 text-lg text-red-500 bg-white/50 dark:bg-gray-900/50 rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+              aria-label="刪除卡片"
+            >
+              &times;
+            </button>
+        )}
+        {isSelectMode && (
+            <div className="absolute top-2 left-2 pointer-events-none">
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    readOnly
+                    tabIndex={-1}
+                    className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark"
+                />
+            </div>
+        )}
+    </div>
 );
 
 
@@ -42,6 +72,12 @@ const JesusSaidPage: React.FC = () => {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCard, setSelectedCard] = useState<JesusSaidCard | null>(null);
+
+    // 刪除與多選狀態
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
+    const [isSelectMode, setIsSelectMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const handleDrawCard = async () => {
         if (gracePoints < 3) {
@@ -70,10 +106,39 @@ const JesusSaidPage: React.FC = () => {
 
     const handleCollectCard = () => {
         if (currentCard) {
-            // Sort by date descending to always add the new card to the top
             setCollectedCards(prev => [...prev, currentCard].sort((a,b) => b.date.localeCompare(a.date)));
             setCurrentCard(null);
         }
+    };
+    
+    // 刪除邏輯
+    const handleDeleteRequest = (ids: Set<string>) => {
+        if (ids.size === 0) return;
+        setItemsToDelete(ids);
+        setShowConfirmation(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (itemsToDelete.size > 0) {
+            setCollectedCards(prev => prev.filter(card => !itemsToDelete.has(card.id)));
+        }
+        setItemsToDelete(new Set());
+        setShowConfirmation(false);
+        setIsSelectMode(false);
+        setSelectedIds(new Set());
+    };
+    
+    // 多選邏輯
+    const handleToggleSelection = (id: string) => {
+        setSelectedIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
     };
 
     const filteredCards = useMemo(() => {
@@ -151,17 +216,46 @@ const JesusSaidPage: React.FC = () => {
             {/* --- 收藏夾 --- */}
             <div>
                 <h3 className="text-xl font-bold text-gold-dark dark:text-gold-light mb-4 text-center">💌 福音卡冊</h3>
-                <input
-                    type="text"
-                    placeholder="搜尋經文、書卷或內容..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-2 mb-6 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
-                />
+                 {/* 控制列 */}
+                <div className="flex justify-between items-center mb-6 gap-2">
+                {!isSelectMode ? (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="搜尋經文、書卷或內容..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <button onClick={() => setIsSelectMode(true)} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">
+                      多選
+                    </button>
+                  </>
+                ) : (
+                  <div className="w-full flex justify-between items-center p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
+                    <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">
+                      取消
+                    </button>
+                    <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
+                    <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">
+                      刪除
+                    </button>
+                  </div>
+                )}
+                </div>
+
                 {filteredCards.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         {filteredCards.map(card => (
-                            <CardPreview key={card.id} card={card} onClick={() => setSelectedCard(card)} />
+                            <CardPreview 
+                                key={card.id} 
+                                card={card} 
+                                onClick={() => setSelectedCard(card)} 
+                                onDelete={() => handleDeleteRequest(new Set([card.id]))}
+                                isSelectMode={isSelectMode}
+                                isSelected={selectedIds.has(card.id)}
+                                onToggleSelect={() => handleToggleSelection(card.id)}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -185,6 +279,15 @@ const JesusSaidPage: React.FC = () => {
                    </button>
                 </div>
               </div>
+            )}
+            
+            {/* --- 刪除確認 Modal --- */}
+            {showConfirmation && (
+                <ConfirmationModal
+                    message={`您確定要刪除這 ${itemsToDelete.size} 張卡片嗎？此操作無法恢復。`}
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setShowConfirmation(false)}
+                />
             )}
         </div>
     );

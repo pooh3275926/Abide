@@ -127,3 +127,49 @@ export const generateJesusSaidCard = async (): Promise<{ verse: string; message:
     throw new Error("無法生成卡片，請稍後再試。");
   }
 };
+
+export const generateQuickRead = async (userInput: string): Promise<{ analysis: string; application: string; prayer: string; }> => {
+  if (!API_KEY) throw new Error("AI 功能目前不可用。");
+  try {
+    const prompt = `你是一位聖經研究助理。請根據使用者輸入的內容（可能是一段經文，或是一個像「約翰福音 3:16-21」或「創世記 1~2:12」這樣的章節參考），提供以下內容（使用繁體中文）：
+1.  analysis：對該段經文的核心信息和背景進行簡潔而深刻的解析。
+2.  application：提供一個實際的建議，說明如何將這段信息應用於日常生活中，並包含可供反思的要點。
+3.  prayer：根據經文和應用，寫一段簡短的結束禱告。
+
+請嚴格遵循以下的 JSON 格式回覆。
+
+使用者輸入：「${userInput}」`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            analysis: {
+              type: Type.STRING,
+              description: '對經文的解析'
+            },
+            application: {
+              type: Type.STRING,
+              description: '生活中的應用建議'
+            },
+            prayer: {
+              type: Type.STRING,
+              description: '簡短的結束禱告'
+            }
+          },
+          required: ['analysis', 'application', 'prayer']
+        }
+      }
+    });
+    
+    const jsonText = response.text.trim();
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.error("Error generating quick read content:", error);
+    throw new Error("無法生成內容，請稍後再試。");
+  }
+};
