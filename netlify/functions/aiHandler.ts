@@ -35,12 +35,12 @@ export async function handler(event: any) {
 
       // 產生經文解析
       case 'scriptureAnalysis': {
-        const prompt = `請為以下經文生成經文摘要解析（使用繁體中文）：${payload.book} ${payload.chapter}`;
+        const prompt = `請為以下經文生成摘要式的經文解析（使用繁體中文）：${payload.book} ${payload.chapter}`;
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
         });
-        result = response.text;
+        result = response.text?.trim() || 'AI 生成失敗，請稍後再試';
         break;
       }
 
@@ -112,5 +112,6 @@ export async function handler(event: any) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message || 'AI 生成失敗' }) };
   }
 }
+
 
 
