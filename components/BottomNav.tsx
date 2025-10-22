@@ -26,11 +26,11 @@ const NavItem: React.FC<{
 const BottomNav: React.FC<BottomNavProps> = ({ activePage, setActivePage }) => {
   // 更新後的底部導覽列項目
   const navItems: { page: Page; label: string; icon: string }[] = [
-    { page: 'journal', label: '日記', icon: '📝' },
+    { page: 'journal', label: '靈修日記', icon: '📝' },
     { page: 'prayer', label: '禱告清單', icon: '🤲🏻' },
     { page: 'iNeedYou', label: '我需要祢', icon: '🌱' },
     { page: 'quickRead', label: '快速讀經', icon: '⚡️' },
-    { page: 'more', label: '更多', icon: '⋯' },
+    { page: 'more', label: '更多功能', icon: '⋯' },
   ];
 
   return (
