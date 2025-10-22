@@ -1,16 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { JournalEntry } from '../types';
 import { BIBLE_BOOKS } from '../constants';
 import ConfirmationModal from './ConfirmationModal';
 
-type BibleTrackerProgress = Record<string, Record<number, boolean>>;
-
-const JournalForm: React.FC<{
+type Props = {
   entry: JournalEntry | null;
   onSave: (entry: JournalEntry) => void;
   onCancel: () => void;
-}> = ({ entry, onSave, onCancel }) => {
+};
+
+const JournalForm: React.FC<Props> = ({ entry, onSave, onCancel }) => {
   const [formData, setFormData] = useState<JournalEntry>(
     entry || {
       id: crypto.randomUUID(),
@@ -29,13 +29,12 @@ const JournalForm: React.FC<{
   const selectedBook = BIBLE_BOOKS.find(b => b.name === formData.book);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
-      setFormData(prev => ({ ...prev, [name]: e.target.checked }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-    if (name === 'book') setFormData(prev => ({ ...prev, chapter: 1 }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+      ...(name === 'book' ? { chapter: 1 } : {}),
+    }));
   };
 
   // AI: 經文解析
@@ -47,7 +46,7 @@ const JournalForm: React.FC<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'scriptureAnalysis',
-          payload: { book: formData.book, chapter: formData.chapter },
+          payload: { book: formData.book, chapter: formData.chapter }
         }),
       });
       const data = await res.json();
@@ -69,7 +68,7 @@ const JournalForm: React.FC<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'applicationHelper',
-          payload: { book: formData.book, chapter: formData.chapter },
+          payload: { book: formData.book, chapter: formData.chapter }
         }),
       });
       const data = await res.json();
@@ -82,7 +81,7 @@ const JournalForm: React.FC<{
     }
   };
 
-  // AI: 靈修禱告（根據經文 + 亮光）
+  // AI: 禱告（書卷 + 章節 + 亮光）
   const handleGeneratePrayer = async () => {
     if (!formData.highlights.trim()) {
       alert('請先輸入亮光或摘要，AI 才能生成禱告。');
@@ -94,7 +93,7 @@ const JournalForm: React.FC<{
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'situationalPrayer', // 對應 aiHandler.ts 中禱告生成
+          action: 'situationalPrayer',
           payload: {
             situation: `書卷：${formData.book} 章節：${formData.chapter} 亮光：${formData.highlights}`
           }
@@ -114,8 +113,8 @@ const JournalForm: React.FC<{
     <div className="fixed inset-0 bg-black/50 z-20 flex justify-center items-center p-4">
       <div className="bg-beige-50 dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">{entry ? '編輯' : '新增'}日記</h2>
+
         <div className="space-y-4">
-          {/* 日期 / 書卷 / 章節 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input type="date" name="date" value={formData.date} onChange={handleChange} className="p-2 rounded border bg-white dark:bg-gray-700" />
             <select name="book" value={formData.book} onChange={handleChange} className="p-2 rounded border bg-white dark:bg-gray-700">
@@ -128,31 +127,26 @@ const JournalForm: React.FC<{
 
           <textarea name="highlights" placeholder="靈修亮光" value={formData.highlights} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
 
-          {/* 經文解析 */}
           <div>
             <label className="font-semibold">經文解析</label>
             <textarea name="scriptureAnalysis" placeholder="AI 生成的經文解析" value={formData.scriptureAnalysis} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700 mt-1" />
             <button onClick={handleGenerateAnalysis} disabled={isGenerating.analysis} className="mt-1 px-3 py-1 text-sm bg-gold-light dark:bg-gold-dark rounded disabled:opacity-50">{isGenerating.analysis ? '生成中...' : '🤖 產生解析'}</button>
           </div>
 
-          {/* 應用小幫手 */}
           <div>
             <label className="font-semibold">應用小幫手</label>
             <textarea name="applicationHelper" placeholder="AI 生成的應用建議" value={formData.applicationHelper} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700 mt-1" />
             <button onClick={handleGenerateApplication} disabled={isGenerating.application} className="mt-1 px-3 py-1 text-sm bg-gold-light dark:bg-gold-dark rounded disabled:opacity-50">{isGenerating.application ? '生成中...' : '🤖 產生建議'}</button>
           </div>
 
-          {/* 神的話 */}
           <textarea name="godMessage" placeholder="神想告訴我什麼？" value={formData.godMessage} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
 
-          {/* 禱告 */}
           <div>
             <label className="font-semibold">禱告</label>
             <textarea name="prayer" placeholder="AI 生成或手動輸入的禱告" value={formData.prayer} onChange={handleChange} rows={4} className="w-full p-2 rounded border bg-white dark:bg-gray-700 mt-1" />
             <button onClick={handleGeneratePrayer} disabled={isGenerating.prayer} className="mt-1 px-3 py-1 text-sm bg-gold-light dark:bg-gold-dark rounded disabled:opacity-50">{isGenerating.prayer ? '生成中...' : '🤖 產生禱告'}</button>
           </div>
 
-          {/* 完成章節 */}
           <div className="flex items-center">
             <input type="checkbox" id="completed" name="completed" checked={formData.completed} onChange={handleChange} className="h-4 w-4 rounded" />
             <label htmlFor="completed" className="ml-2">是否完成本章全部內容</label>
