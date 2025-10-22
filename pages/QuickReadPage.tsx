@@ -3,6 +3,22 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { QuickReadEntry } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 
+// 輔助函式：嘗試從文字中抓 JSON
+function tryParseJSON(text: string, defaultValue: any = {}) {
+    if (!text) return defaultValue;
+    try {
+        return JSON.parse(text);
+    } catch {
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) {
+            try {
+                return JSON.parse(match[0]);
+            } catch {}
+        }
+        return defaultValue;
+    }
+}
+
 const QuickReadPage: React.FC = () => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +35,7 @@ const QuickReadPage: React.FC = () => {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
 
-    // 封裝 AI 呼叫函式
+    // 封裝 AI 呼叫函式（穩定抓 JSON）
     const generateQuickReadAPI = async (input: string) => {
         try {
             const res = await fetch('/api/aiHandler', {
@@ -31,7 +47,11 @@ const QuickReadPage: React.FC = () => {
                 })
             });
             const data = await res.json();
-            return data.result;
+            return tryParseJSON(data.result, {
+                analysis: 'AI 暫無回應',
+                application: 'AI 暫無回應',
+                prayer: 'AI 暫無回應'
+            });
         } catch (err) {
             console.error('generateQuickReadAPI error:', err);
             throw new Error('AI 生成失敗，請稍後再試。');
