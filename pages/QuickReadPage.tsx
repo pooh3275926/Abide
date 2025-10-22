@@ -157,7 +157,7 @@ const QuickReadPage: React.FC = () => {
                                 placeholder="搜尋..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="flex-grow p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
+                                className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
                             />
                             <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">
                                 {sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}
