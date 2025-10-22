@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Page } from '../App';
 
@@ -32,6 +31,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activePage, setActivePage }) => {
     { page: 'prayer', label: '禱告清單', icon: '🤲🏻' },
     { page: 'jesusSaid', label: '耶穌說', icon: '💌' },
     { page: 'quickRead', label: '快速讀經', icon: '⚡️' },
+    { page: 'settings', label: '設定', icon: '⚙️' },
   ];
 
   return (
