@@ -34,7 +34,7 @@ const QuickReadPage: React.FC = () => {
 
     // ---- 穩定抓 JSON 的輔助函式 ----
     const tryParseJSON = (text: string, defaultValue: any = {}) => {
-        if (!text) return defaultValue;
+        if (!text || typeof text !== 'string') return defaultValue;
         try {
             return JSON.parse(text);
         } catch {
@@ -298,3 +298,4 @@ const QuickReadPage: React.FC = () => {
 };
 
 export default QuickReadPage;
+
