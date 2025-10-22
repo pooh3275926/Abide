@@ -11,7 +11,9 @@ const PrayerHistoryEditForm: React.FC<{
 }> = ({ prayer, onSave, onCancel }) => {
   const [currentSituation, setCurrentSituation] = useState(prayer.situation);
 
-  const handleSave = () => onSave({ ...prayer, situation: currentSituation });
+  const handleSave = () => {
+    onSave({ ...prayer, situation: currentSituation });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-30 flex justify-center items-center p-4">
@@ -31,6 +33,25 @@ const PrayerHistoryEditForm: React.FC<{
       </div>
     </div>
   );
+};
+
+// 封裝呼叫新版 AI API 的函式
+const generatePrayerAPI = async (inputSituation: string) => {
+  try {
+    const res = await fetch('/api/aiHandler', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'situationalPrayer',
+        payload: { situation: inputSituation || '無特定情況' },
+      }),
+    });
+    const data = await res.json();
+    return data.result || 'AI 功能暫不可用，請稍後再試。';
+  } catch (err) {
+    console.error('generatePrayerAPI error:', err);
+    return '生成禱告時發生錯誤，請稍後再試。';
+  }
 };
 
 // 主頁面
@@ -54,27 +75,35 @@ const INeedYouPage: React.FC = () => {
 
   // 刪除禱告
   const handleDeleteRequest = (ids: Set<string>) => {
-    if (!ids.size) return;
+    if (ids.size === 0) return;
     setItemsToDelete(ids);
     setShowConfirmation(true);
   };
+
   const handleConfirmDelete = () => {
-    setPrayerHistory(prev => prev.filter(p => !itemsToDelete.has(p.id)));
+    if (itemsToDelete.size > 0) {
+      setPrayerHistory(prev => prev.filter(p => !itemsToDelete.has(p.id)));
+    }
     setItemsToDelete(new Set());
     setShowConfirmation(false);
     setIsSelectMode(false);
     setSelectedIds(new Set());
   };
-  const handleCancelDelete = () => setShowConfirmation(false);
+
+  const handleCancelDelete = () => {
+    setItemsToDelete(new Set());
+    setShowConfirmation(false);
+  };
 
   // 過濾與排序
   const filteredHistory = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase();
     return prayerHistory
       .filter(p => !searchTerm || p.situation.toLowerCase().includes(lowerSearch) || p.prayer.toLowerCase().includes(lowerSearch))
-      .sort((a, b) => sortOrder === 'desc' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date));
+      .sort((a, b) => (sortOrder === 'desc' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)));
   }, [prayerHistory, searchTerm, sortOrder]);
 
+  // 多選邏輯
   const handleToggleSelection = (id: string) => {
     setSelectedIds(prev => {
       const newSet = new Set(prev);
@@ -82,24 +111,16 @@ const INeedYouPage: React.FC = () => {
       return newSet;
     });
   };
+
   const handleSelectAll = () => {
-    setSelectedIds(selectedIds.size === filteredHistory.length ? new Set() : new Set(filteredHistory.map(p => p.id)));
-  };
+    if(selectedIds.size === filteredHistory.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredHistory.map(p => p.id)));
+    }
+  }
 
-  // ✅ 統一使用新的 API 生成禱告
-  const generatePrayerAPI = async (inputSituation: string) => {
-    const response = await fetch('/api/aiHandler', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'situationalPrayer',
-        payload: { situation: inputSituation || '無特定情況' }
-      })
-    });
-    const data = await response.json();
-    return data.result || 'AI 功能暫不可用，請稍後再試。';
-  };
-
+  // 生成禱告
   const handleGeneratePrayer = async () => {
     if (!situation.trim()) {
       setError('請輸入您的狀況或感受。');
@@ -133,9 +154,11 @@ const INeedYouPage: React.FC = () => {
     setRegeneratingId(prayerToRegen.id);
     try {
       const newPrayerText = await generatePrayerAPI(prayerToRegen.situation);
-      setPrayerHistory(prev => prev.map(p => p.id === prayerToRegen.id ? { ...p, prayer: newPrayerText } : p));
-    } catch {
-      console.error('Failed to regenerate prayer');
+      setPrayerHistory(prev =>
+        prev.map(p => p.id === prayerToRegen.id ? { ...p, prayer: newPrayerText } : p)
+      );
+    } catch (err) {
+      console.error('Failed to regenerate prayer', err);
     } finally {
       setRegeneratingId(null);
     }
@@ -177,7 +200,9 @@ const INeedYouPage: React.FC = () => {
             </svg>
             生成中...
           </>
-        ) : '🕊️ 產生禱告'}
+        ) : (
+          '🕊️ 產生禱告'
+        )}
       </button>
 
       {/* 顯示 AI 生成的禱告 */}
@@ -188,8 +213,130 @@ const INeedYouPage: React.FC = () => {
         </div>
       )}
 
-      {/* 禱告紀錄區（保留原本多選、排序、搜尋功能） */}
-      {/* ...這裡原本的禱告紀錄 JSX 保留不變，只要把 handleRegeneratePrayer 改成上面的 generatePrayerAPI */}
+      {/* 禱告紀錄 */}
+      <div className="mt-12 text-left">
+        <h3 className="text-xl font-bold text-gold-dark dark:text-gold-light mb-4 text-center">禱告紀錄</h3>
+
+        {/* 控制列 */}
+        <div className="flex justify-between items-center mb-4 gap-2 p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
+          {!isSelectMode ? (
+            <>
+              <input
+                type="text"
+                placeholder="搜尋狀況或禱告..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
+              />
+              <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-300 dark:bg-gray-700 whitespace-nowrap text-sm">
+                {sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}
+              </button>
+              <button onClick={() => { setIsSelectMode(true); setSelectedIds(new Set()); }} className="p-2 rounded-lg bg-beige-300 dark:bg-gray-700 whitespace-nowrap text-sm">
+                多選
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">
+                取消
+              </button>
+              <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
+              <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">
+                刪除
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {filteredHistory.length > 0 ? filteredHistory.map(p => {
+            const isExpanded = expandedPrayerId === p.id && !isSelectMode;
+            return (
+              <div 
+                key={p.id} 
+                className={`relative bg-beige-50 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 ${isSelectMode ? 'pl-10' : ''} ${selectedIds.has(p.id) ? 'ring-2 ring-gold-DEFAULT' : ''}`}
+              >
+                {isSelectMode && (
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <input 
+                      type="checkbox"
+                      className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark"
+                      checked={selectedIds.has(p.id)}
+                      onChange={() => handleToggleSelection(p.id)}
+                      aria-label={`Select prayer from ${p.date}`}
+                    />
+                  </div>
+                )}
+                <div 
+                  className="p-4 cursor-pointer" 
+                  role="button" 
+                  tabIndex={isSelectMode ? -1 : 0}
+                  onClick={() => isSelectMode ? handleToggleSelection(p.id) : setExpandedPrayerId(isExpanded ? null : p.id)}
+                  onKeyDown={(e) => !isSelectMode && e.key === 'Enter' && setExpandedPrayerId(isExpanded ? null : p.id)}
+                  aria-expanded={isExpanded}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-grow pr-4">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{p.date}</p>
+                      <p className="font-semibold mt-1 whitespace-pre-wrap">狀況：{p.situation}</p>
+                    </div>
+                    {!isSelectMode && <span className={`text-xl transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>}
+                  </div>
+
+                  {isExpanded && (
+                    <div className="mt-4 pt-4 border-t border-beige-200 dark:border-gray-700">
+                      <h4 className="font-semibold text-sm text-gray-600 dark:text-gray-300">禱告內容</h4>
+                      <p className="mt-1 text-sm whitespace-pre-wrap">{p.prayer}</p>
+
+                      <div className="flex justify-end gap-2 mt-4">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRegeneratePrayer(p); }}
+                          disabled={regeneratingId === p.id}
+                          className="text-xs px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded disabled:opacity-50 flex items-center"
+                        >
+                          {regeneratingId === p.id ? '生成中...' : '↺ 重新生成'}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingPrayer(p); }}
+                          className="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded"
+                        >
+                          ᝰ 編輯
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([p.id])); }}
+                          className="text-xs px-3 py-1 bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-200 rounded hover:bg-red-300 dark:hover:bg-red-700"
+                        >
+                          ✘ 刪除
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }) : (
+            <p className="text-center text-gray-500 py-4">{searchTerm ? '找不到紀錄' : '我們一起禱告吧'}</p>
+          )}
+        </div>
+      </div>
+
+      {/* 編輯彈窗 */}
+      {editingPrayer && (
+        <PrayerHistoryEditForm
+          prayer={editingPrayer}
+          onSave={handleSaveEditedPrayer}
+          onCancel={() => setEditingPrayer(null)}
+        />
+      )}
+
+      {/* 確認刪除彈窗 */}
+      {showConfirmation && (
+        <ConfirmationModal
+            message={`您確定要刪除這 ${itemsToDelete.size} 筆禱告紀錄嗎？此操作無法恢復。`}
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+        />
+      )}
     </div>
   );
 };
