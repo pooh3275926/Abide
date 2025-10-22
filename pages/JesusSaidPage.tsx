@@ -3,7 +3,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { JesusSaidCard } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 
-// Reusable component to display a single card's content
+// 單張卡片展示
 const CardDisplay: React.FC<{ card: JesusSaidCard }> = ({ card }) => (
   <div className="bg-beige-50 dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-auto">
     <div className="border-b-2 border-gold-light pb-3 mb-3">
@@ -21,7 +21,7 @@ const CardDisplay: React.FC<{ card: JesusSaidCard }> = ({ card }) => (
   </div>
 );
 
-// Component for the small card preview in the collection grid
+// 卡片縮圖展示
 const CardPreview: React.FC<{
   card: JesusSaidCard,
   onClick: () => void,
@@ -71,11 +71,13 @@ const JesusSaidPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCard, setSelectedCard] = useState<JesusSaidCard | null>(null);
 
+  // 刪除與多選
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // 抽卡 (透過 aiHandler)
   const handleDrawCard = async () => {
     if (gracePoints < 3) {
       setError('恩典值不足！');
@@ -93,27 +95,19 @@ const JesusSaidPage: React.FC = () => {
       });
 
       const data = await res.json();
-
-      // 安全解析 AI 回傳 JSON
-      let parsedResult: any = {};
-      try {
-        const rawText = data.result?.text || JSON.stringify(data.result || {});
-        const match = rawText.match(/\{[\s\S]*\}/); // 抓到第一個 JSON 物件
-        parsedResult = match ? JSON.parse(match[0]) : {};
-      } catch {
-        parsedResult = {};
-      }
+      const cardContent = data.result || {};
 
       const newCard: JesusSaidCard = {
         id: crypto.randomUUID(),
         date: new Date().toISOString().split('T')[0],
-        verse: parsedResult.verse || 'AI 暫無回應',
-        message: parsedResult.message || 'AI 暫無回應',
-        prayer: parsedResult.prayer || 'AI 暫無回應',
+        verse: cardContent.verse || 'AI 暫無回應',
+        message: cardContent.message || 'AI 暫無回應',
+        prayer: cardContent.prayer || 'AI 暫無回應',
       };
 
       setCurrentCard(newCard);
       setGracePoints(prev => prev - 3);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成卡片時發生未知錯誤。');
     } finally {
@@ -165,11 +159,15 @@ const JesusSaidPage: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-2xl text-center p-4">
+      {/* --- 恩典值 --- */}
       <div className="bg-beige-200 dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
         <p className="text-2xl font-bold text-gold-dark dark:text-gold-light">💧 {gracePoints} 點恩典值</p>
-        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">每完成一章靈修日記可獲得 1 點。</p>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+          每完成一章靈修日記可獲得 1 點。
+        </p>
       </div>
 
+      {/* --- 說明 --- */}
       <div className="mb-8 p-4 bg-beige-50 dark:bg-gray-800/50 rounded-lg">
         <h2 className="font-bold mb-2">說明</h2>
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -177,6 +175,7 @@ const JesusSaidPage: React.FC = () => {
         </p>
       </div>
 
+      {/* --- 抽卡區 --- */}
       <div className="mb-12">
         {currentCard ? (
           <div className="relative">
@@ -221,8 +220,10 @@ const JesusSaidPage: React.FC = () => {
         {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
       </div>
 
+      {/* --- 收藏夾 --- */}
       <div>
         <h3 className="text-xl font-bold text-gold-dark dark:text-gold-light mb-4 text-center">💌 福音卡冊</h3>
+
         <div className="flex justify-between items-center mb-6 gap-2">
           {!isSelectMode ? (
             <>
@@ -271,6 +272,7 @@ const JesusSaidPage: React.FC = () => {
         )}
       </div>
 
+      {/* --- 全螢幕卡片顯示 --- */}
       {selectedCard && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-center items-center p-4" onClick={() => setSelectedCard(null)}>
           <div className="relative w-full max-w-md" onClick={(e) => e.stopPropagation()}>
@@ -286,6 +288,7 @@ const JesusSaidPage: React.FC = () => {
         </div>
       )}
 
+      {/* --- 刪除確認 Modal --- */}
       {showConfirmation && (
         <ConfirmationModal
           message={`您確定要刪除這 ${itemsToDelete.size} 張卡片嗎？此操作無法恢復。`}
