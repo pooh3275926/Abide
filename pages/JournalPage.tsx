@@ -44,7 +44,7 @@ const JournalForm: React.FC<{
 
   const handleGenerateAnalysis = async () => {
     setIsGenerating(prev => ({ ...prev, analysis: true }));
-    const res = await fetch('/.netlify/functions/aiHandler', {
+    const res = await fetch('/api/aiHandler', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -59,7 +59,7 @@ const JournalForm: React.FC<{
 
   const handleGenerateApplication = async () => {
     setIsGenerating(prev => ({ ...prev, application: true }));
-    const res = await fetch('/.netlify/functions/aiHandler', {
+    const res = await fetch('/api/aiHandler', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -74,7 +74,7 @@ const JournalForm: React.FC<{
 
   const handleGeneratePrayer = async () => {
     setIsGenerating(prev => ({ ...prev, prayer: true }));
-    const res = await fetch('/.netlify/functions/aiHandler', {
+    const res = await fetch('/api/aiHandler', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
