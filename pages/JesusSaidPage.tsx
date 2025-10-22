@@ -33,14 +33,18 @@ const CardPreview: React.FC<{
   <div className="relative">
     <button
       onClick={isSelectMode ? onToggleSelect : onClick}
-      className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md p-4 w-full h-64 flex flex-col justify-start items-center text-center hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT ${isSelected ? 'ring-2 ring-gold-dark' : ''}`}
+      className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md p-4 w-full aspect-[3/4] flex flex-col justify-center items-center text-center hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT ${isSelected ? 'ring-2 ring-gold-dark' : ''}`}
       aria-label={`查看卡片: ${card.verse}`}
     >
-      <p className="text-sm italic text-gold-dark dark:text-gold-light">"{card.verse.split('（')[0]}"</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{card.verse.match(/（(.*)）/)?.[1]}</p>
-    </button>
-    {!isSelectMode && (
-      <button
+      <p
+        className="text-sm italic text-gold-dark dark:text-gold-light line-clamp-[9] overflow-hidden text-ellipsis break-words max-h-[11rem] leading-snug"
+      >
+        "{card.verse.split('（')[0]}"
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        {card.verse.match(/（(.*)）/)?.[1]}
+      </p>
+     <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
         className="absolute top-1 right-1 text-lg text-red-500 bg-white/50 dark:bg-gray-900/50 rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
         aria-label="刪除卡片"
