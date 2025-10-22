@@ -38,7 +38,7 @@ const CardPreview: React.FC<{
     >
       {/* 經文固定顯示、最多 9 行 */}
       <p
-        className="text-sm italic text-gold-dark dark:text-gold-light line-clamp-[9] overflow-hidden text-ellipsis break-words max-h-[11rem] leading-snug"
+        className="text-sm italic text-gold-dark dark:text-gold-light line-clamp-[8] overflow-hidden text-ellipsis break-words max-h-[11rem] leading-snug"
       >
         "{card.verse.split('（')[0]}"
       </p>
