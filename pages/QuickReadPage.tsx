@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { generateQuickRead } from '../services/geminiService';
 import { QuickReadEntry } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -20,6 +19,25 @@ const QuickReadPage: React.FC = () => {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
 
+    // 封裝 AI 呼叫函式
+    const generateQuickReadAPI = async (input: string) => {
+        try {
+            const res = await fetch('/api/aiHandler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'quickRead',
+                    payload: { userInput: input }
+                })
+            });
+            const data = await res.json();
+            return data.result;
+        } catch (err) {
+            console.error('generateQuickReadAPI error:', err);
+            throw new Error('AI 生成失敗，請稍後再試。');
+        }
+    };
+
     const handleGenerate = async () => {
         if (!userInput.trim()) {
             setError('請輸入經文或章節參考。');
@@ -30,22 +48,14 @@ const QuickReadPage: React.FC = () => {
         setCurrentResult(null);
 
         try {
-            const res = await fetch('/api/aiHandler', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'quickRead',
-                payload: { userInput }
-              })
-            });
-            const data = await res.json();
-            setCurrentResult(data.result);
+            const result = await generateQuickReadAPI(userInput);
+            setCurrentResult(result);
 
             const newEntry: QuickReadEntry = {
                 id: crypto.randomUUID(),
                 date: new Date().toISOString().split('T')[0],
                 userInput,
-                ...data.result, 
+                ...result,
             };
             setHistory(prev => [newEntry, ...prev]);
             setUserInput('');
