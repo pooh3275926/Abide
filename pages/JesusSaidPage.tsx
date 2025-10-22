@@ -21,7 +21,7 @@ const CardDisplay: React.FC<{ card: JesusSaidCard }> = ({ card }) => (
   </div>
 );
 
-// 卡片縮圖展示
+// 卡片縮圖展示（收藏區）
 const CardPreview: React.FC<{
   card: JesusSaidCard,
   onClick: () => void,
@@ -36,6 +36,7 @@ const CardPreview: React.FC<{
       className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md p-4 w-full aspect-[3/4] flex flex-col justify-center items-center text-center hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT ${isSelected ? 'ring-2 ring-gold-dark' : ''}`}
       aria-label={`查看卡片: ${card.verse}`}
     >
+      {/* 經文固定顯示、最多 9 行 */}
       <p
         className="text-sm italic text-gold-dark dark:text-gold-light line-clamp-[9] overflow-hidden text-ellipsis break-words max-h-[11rem] leading-snug"
       >
@@ -44,7 +45,10 @@ const CardPreview: React.FC<{
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
         {card.verse.match(/（(.*)）/)?.[1]}
       </p>
-     <button
+    </button>
+
+    {!isSelectMode && (
+      <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
         className="absolute top-1 right-1 text-lg text-red-500 bg-white/50 dark:bg-gray-900/50 rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
         aria-label="刪除卡片"
@@ -52,6 +56,7 @@ const CardPreview: React.FC<{
         &times;
       </button>
     )}
+
     {isSelectMode && (
       <div className="absolute top-2 left-2 pointer-events-none">
         <input
@@ -81,7 +86,7 @@ const JesusSaidPage: React.FC = () => {
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // 抽卡 (透過 aiHandler)
+  // ✅ 抽卡 (呼叫 /api/aiHandler)
   const handleDrawCard = async () => {
     if (gracePoints < 3) {
       setError('恩典值不足！');
@@ -92,27 +97,36 @@ const JesusSaidPage: React.FC = () => {
     setError('');
 
     try {
-      const res = await fetch('/api/aiHandler', {
+      const response = await fetch('/api/aiHandler', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'jesusSaidCard', payload: {} })
+        body: JSON.stringify({
+          action: 'jesusSaidCard',
+          payload: {}
+        }),
       });
 
-      const data = await res.json();
-      const cardContent = data.result || {};
+      const data = await response.json();
+
+      if (!data || !data.result) {
+        throw new Error('AI 暫無回應，請稍後再試。');
+      }
+
+      const { verse, message, prayer } = data.result;
 
       const newCard: JesusSaidCard = {
         id: crypto.randomUUID(),
         date: new Date().toISOString().split('T')[0],
-        verse: cardContent.verse || 'AI 暫無回應',
-        message: cardContent.message || 'AI 暫無回應',
-        prayer: cardContent.prayer || 'AI 暫無回應',
+        verse: verse || 'AI 暫無回應',
+        message: message || 'AI 暫無回應',
+        prayer: prayer || 'AI 暫無回應',
       };
 
       setCurrentCard(newCard);
-      setGracePoints(prev => prev - 3);
+      setGracePoints((prev) => prev - 3);
 
     } catch (err) {
+      console.error('Error generating card:', err);
       setError(err instanceof Error ? err.message : '生成卡片時發生未知錯誤。');
     } finally {
       setIsLoading(false);
@@ -121,7 +135,9 @@ const JesusSaidPage: React.FC = () => {
 
   const handleCollectCard = () => {
     if (currentCard) {
-      setCollectedCards(prev => [...prev, currentCard].sort((a,b) => b.date.localeCompare(a.date)));
+      setCollectedCards((prev) =>
+        [...prev, currentCard].sort((a, b) => b.date.localeCompare(a.date))
+      );
       setCurrentCard(null);
     }
   };
@@ -134,7 +150,7 @@ const JesusSaidPage: React.FC = () => {
 
   const handleConfirmDelete = () => {
     if (itemsToDelete.size > 0) {
-      setCollectedCards(prev => prev.filter(card => !itemsToDelete.has(card.id)));
+      setCollectedCards((prev) => prev.filter((card) => !itemsToDelete.has(card.id)));
     }
     setItemsToDelete(new Set());
     setShowConfirmation(false);
@@ -143,7 +159,7 @@ const JesusSaidPage: React.FC = () => {
   };
 
   const handleToggleSelection = (id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) newSet.delete(id);
       else newSet.add(id);
@@ -154,10 +170,11 @@ const JesusSaidPage: React.FC = () => {
   const filteredCards = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase();
     if (!lowerSearch) return collectedCards;
-    return collectedCards.filter(card =>
-      card.verse.toLowerCase().includes(lowerSearch) ||
-      card.message.toLowerCase().includes(lowerSearch) ||
-      card.prayer.toLowerCase().includes(lowerSearch)
+    return collectedCards.filter(
+      (card) =>
+        card.verse.toLowerCase().includes(lowerSearch) ||
+        card.message.toLowerCase().includes(lowerSearch) ||
+        card.prayer.toLowerCase().includes(lowerSearch)
     );
   }, [collectedCards, searchTerm]);
 
@@ -257,7 +274,7 @@ const JesusSaidPage: React.FC = () => {
 
         {filteredCards.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {filteredCards.map(card => (
+            {filteredCards.map((card) => (
               <CardPreview
                 key={card.id}
                 card={card}
