@@ -30,7 +30,7 @@ const QuickReadPage: React.FC = () => {
         setCurrentResult(null);
 
         try {
-            const res = await fetch('/.netlify/functions/aiHandler', {
+            const res = await fetch('/api/aiHandler', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
