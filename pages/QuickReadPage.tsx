@@ -1,26 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { generateQuickRead } from '../services/geminiService';
 import { QuickReadEntry } from '../types';
 import ConfirmationModal from './ConfirmationModal';
-
-// 輔助函式：嘗試從文字中抓 JSON
-function tryParseJSON(text: string, defaultValue: any = {}) {
-    if (!text) return defaultValue;
-    try {
-        return JSON.parse(text);
-    } catch {
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-            try {
-                return JSON.parse(match[0]);
-            } catch {}
-        }
-        return defaultValue;
-    }
-}
+import { BIBLE_BOOKS } from '../constants';
 
 const QuickReadPage: React.FC = () => {
-    const [userInput, setUserInput] = useState('');
+    const [selectedBookName, setSelectedBookName] = useState(BIBLE_BOOKS[0].name);
+    const [selectedChapter, setSelectedChapter] = useState<number | string>(1);
+    const [verseRange, setVerseRange] = useState('');
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [currentResult, setCurrentResult] = useState<Omit<QuickReadEntry, 'id' | 'date' | 'userInput'> | null>(null);
@@ -29,56 +18,63 @@ const QuickReadPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
     const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
-    
+
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
 
-    // 封裝 AI 呼叫函式（穩定抓 JSON）
-    const generateQuickReadAPI = async (input: string) => {
+    const selectedBook = useMemo(() => BIBLE_BOOKS.find(b => b.name === selectedBookName) || BIBLE_BOOKS[0], [selectedBookName]);
+
+    const handleBookChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedBookName(e.target.value);
+        setSelectedChapter(1);
+        setVerseRange('');
+    };
+
+    // ---- 穩定抓 JSON 的輔助函式 ----
+    const tryParseJSON = (text: string, defaultValue: any = {}) => {
+        if (!text) return defaultValue;
         try {
-            const res = await fetch('/api/aiHandler', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'quickRead',
-                    payload: { userInput: input }
-                })
-            });
-            const data = await res.json();
-            return tryParseJSON(data.result, {
-                analysis: 'AI 暫無回應',
-                application: 'AI 暫無回應',
-                prayer: 'AI 暫無回應'
-            });
-        } catch (err) {
-            console.error('generateQuickReadAPI error:', err);
-            throw new Error('AI 生成失敗，請稍後再試。');
+            return JSON.parse(text);
+        } catch {
+            const match = text.match(/\{[\s\S]*\}/);
+            if (match) {
+                try {
+                    return JSON.parse(match[0]);
+                } catch {}
+            }
+            return defaultValue;
         }
     };
 
     const handleGenerate = async () => {
-        if (!userInput.trim()) {
-            setError('請輸入經文或章節參考。');
-            return;
-        }
+        const finalUserInput = verseRange.trim()
+            ? `${selectedBookName} ${selectedChapter}:${verseRange.trim()}`
+            : `${selectedBookName} ${selectedChapter}`;
+
         setError('');
         setIsLoading(true);
         setCurrentResult(null);
 
         try {
-            const result = await generateQuickReadAPI(userInput);
+            const rawResult = await generateQuickRead(finalUserInput);
+            const result = tryParseJSON(rawResult, {
+                analysis: 'AI 暫無回應',
+                application: 'AI 暫無回應',
+                prayer: 'AI 暫無回應'
+            });
+
             setCurrentResult(result);
 
             const newEntry: QuickReadEntry = {
                 id: crypto.randomUUID(),
                 date: new Date().toISOString().split('T')[0],
-                userInput,
+                userInput: finalUserInput,
                 ...result,
             };
             setHistory(prev => [newEntry, ...prev]);
-            setUserInput('');
+            setVerseRange('');
         } catch (err) {
             setError(err instanceof Error ? err.message : '生成時發生錯誤，請稍後再試。');
         } finally {
@@ -134,23 +130,43 @@ const QuickReadPage: React.FC = () => {
     return (
         <div className="container mx-auto max-w-2xl">
             <p className="mt-4 text-center text-gray-600 dark:text-gray-400 mb-6">
-                貼上經文內容，或輸入創世記 1~2:12這類格式，<br />
+                選擇書卷章節，或指定節數範圍，<br />
                 讓 AI 協助您快速領受神的話語。
             </p>
 
-            <div className="mb-8">
-                <textarea
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    placeholder="例如：約翰福音 3:16"
-                    rows={4}
-                    className="w-full p-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-gold-DEFAULT focus:outline-none"
-                />
-                {error && <p className="text-red-500 text-sm mt-2 text-center">{error}</p>}
+            <div className="mb-8 p-4 bg-beige-50 dark:bg-gray-800 rounded-lg shadow">
+                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="md:col-span-2">
+                        <label htmlFor="book-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">書卷</label>
+                        <select id="book-select" value={selectedBookName} onChange={handleBookChange} className="mt-1 block w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT">
+                            {BIBLE_BOOKS.map(book => <option key={book.name} value={book.name}>{book.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="md:col-span-1">
+                        <label htmlFor="chapter-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">章</label>
+                        <select id="chapter-select" value={selectedChapter} onChange={(e) => setSelectedChapter(e.target.value)} className="mt-1 block w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT">
+                             {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(chap => <option key={chap} value={chap}>{chap}</option>)}
+                        </select>
+                    </div>
+                    <div className="md:col-span-2">
+                        <label htmlFor="verse-range-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">節 (範圍)</label>
+                        <input
+                            id="verse-range-input"
+                            type="text"
+                            value={verseRange}
+                            onChange={(e) => setVerseRange(e.target.value)}
+                            placeholder="例如 1-10, 16 (可留空)"
+                            className="mt-1 block w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT"
+                        />
+                    </div>
+                </div>
+
+                {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+                
                 <button
                     onClick={handleGenerate}
                     disabled={isLoading}
-                    className="mt-4 w-full px-8 py-3 bg-gold-DEFAULT text-black dark:text-white rounded-lg shadow-md hover:bg-gold-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
+                    className="mt-6 w-full px-8 py-3 bg-gold-DEFAULT text-black dark:text-white rounded-lg shadow-md hover:bg-gold-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
                 >
                     {isLoading ? (
                         <>
