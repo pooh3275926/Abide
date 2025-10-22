@@ -5,11 +5,12 @@ import JournalPage from './pages/JournalPage';
 import PrayerListPage from './pages/PrayerListPage';
 import JesusSaidPage from './pages/JesusSaidPage';
 import QuickReadPage from './pages/QuickReadPage'; // Import the new page
+import SettingsPage from './pages/SettingsPage';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import { useLocalStorage } from './hooks/useLocalStorage';
 
-export type Page = 'iNeedYou' | 'tracker' | 'journal' | 'prayer' | 'jesusSaid' | 'quickRead';
+export type Page = 'iNeedYou' | 'tracker' | 'journal' | 'prayer' | 'jesusSaid' | 'quickRead' | 'settings';
 
 const pageTitles: Record<Page, string> = {
   iNeedYou: '我需要祢',
@@ -18,6 +19,7 @@ const pageTitles: Record<Page, string> = {
   prayer: '禱告清單',
   jesusSaid: '耶穌說',
   quickRead: '快速讀經',
+  settings: '設定',
 };
 
 const App: React.FC = () => {
@@ -47,6 +49,8 @@ const App: React.FC = () => {
         return <JesusSaidPage />;
       case 'quickRead':
         return <QuickReadPage />;
+      case 'settings':
+        return <SettingsPage />;
       default:
         return <INeedYouPage />;
     }
