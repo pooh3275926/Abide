@@ -22,16 +22,18 @@ const SettingsPage: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `faith-journal-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `Abide-backup-${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
 
-      alert("✅ 匯出成功！");
+      setImportStatus("✅ 匯出成功！");
+      setTimeout(() => setImportStatus(""), 3000);
+
     } catch (error) {
       console.error(error);
-      alert("❌ 匯出失敗，請稍後再試。");
+      setImportStatus("❌ 匯出失敗，請稍後再試。");
     }
   };
 
@@ -41,23 +43,21 @@ const SettingsPage: React.FC = () => {
     const file = fileInput.files?.[0];
 
     if (!file) {
-      setImportStatus("未選擇檔案。");
       return;
     }
-
-    // 清空 input，避免同檔案二次選擇無法觸發 onChange
+    
     fileInput.value = "";
-
     setIsImporting(true);
     setImportStatus("正在讀取檔案...");
 
     try {
-      const text = await file.text(); // ✅ 比 FileReader 更穩定
+      const text = await file.text();
       const importedData = JSON.parse(text);
 
       setImportStatus("正在合併資料...");
 
-      const itemKeys = [
+      // FIX: Explicitly type `itemKeys` to ensure `key` is a string, resolving errors on lines 68 and 80.
+      const itemKeys: ("journalEntries" | "prayerItems" | "situationalPrayers" | "jesusSaidCards" | "quickReadHistory")[] = [
         "journalEntries",
         "prayerItems",
         "situationalPrayers",
@@ -82,7 +82,6 @@ const SettingsPage: React.FC = () => {
         }
       });
 
-      // 🔸 bibleTrackerProgress 深層合併
       if (importedData.bibleTrackerProgress) {
         const existingProgress = JSON.parse(
           localStorage.getItem("bibleTrackerProgress") || "{}"
@@ -98,7 +97,6 @@ const SettingsPage: React.FC = () => {
         localStorage.setItem("bibleTrackerProgress", JSON.stringify(mergedProgress));
       }
 
-      // 🔸 gracePoints 累加
       if (typeof importedData.gracePoints === "number") {
         const existingPoints = JSON.parse(localStorage.getItem("gracePoints") || "0");
         localStorage.setItem(
@@ -106,56 +104,86 @@ const SettingsPage: React.FC = () => {
           JSON.stringify(existingPoints + importedData.gracePoints)
         );
       }
-
-      // 🔸 darkMode 覆寫
+      
       if (typeof importedData.darkMode === "boolean") {
         localStorage.setItem("darkMode", JSON.stringify(importedData.darkMode));
       }
 
       setImportStatus("✅ 匯入成功！系統將於 2 秒後重新整理。");
       setTimeout(() => window.location.reload(), 2000);
+
     } catch (error) {
       console.error(error);
       setImportStatus(
-        `匯入失敗：${error instanceof Error ? error.message : "無效的 JSON 檔案。"}`
+        `❌ 匯入失敗：${error instanceof Error ? error.message : "無效的 JSON 檔案。"}`
       );
       setIsImporting(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold mb-4 text-center">⚙️ 設定與資料備份</h1>
-
-      <div className="space-y-4">
-        <button
-          onClick={handleExport}
-          className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition"
-        >
-          📤 匯出所有資料
-        </button>
-
-        <label className="block w-full">
-          <span className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium text-center cursor-pointer block transition">
-            📥 匯入資料（JSON）
-          </span>
-          <input
-            type="file"
-            accept="application/json"
-            onChange={handleImport}
-            className="hidden"
-          />
-        </label>
-
-        {isImporting && (
-          <p className="text-gray-600 text-sm text-center animate-pulse">
-            {importStatus || "正在處理中..."}
-          </p>
-        )}
-        {!isImporting && importStatus && (
-          <p className="text-center text-gray-700">{importStatus}</p>
-        )}
+    <div className="p-4 max-w-xl mx-auto space-y-8">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gold-dark dark:text-gold-light">設定</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">管理您的應用程式資料</p>
       </div>
+
+      <div className="space-y-6">
+        {/* Export Card */}
+        <div className="bg-beige-50 dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-3xl" aria-hidden="true">📩</span>
+            <div>
+              <h2 className="text-xl font-semibold">匯出資料</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                將您所有的靈修日記、禱告清單、進度等資料，打包成一個 JSON 檔案下載備份。
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleExport}
+            className="w-full py-3 px-4 bg-beige-200 dark:bg-gray-700 rounded-lg font-semibold transition hover:bg-beige-300 dark:hover:bg-gray-600 flex items-center justify-center gap-2"
+          >
+            <span>下載備份檔案</span>
+          </button>
+        </div>
+        
+        {/* Import Card */}
+        <div className="bg-beige-50 dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-3xl" aria-hidden="true">💻</span>
+            <div>
+              <h2 className="text-xl font-semibold">匯入資料</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                從備份檔案還原您的資料。匯入的資料將會與現有資料合併，而不是覆蓋。
+              </p>
+            </div>
+          </div>
+          <label className="block w-full">
+            <span className={`w-full py-3 px-4 bg-beige-200 dark:bg-gray-700 rounded-lg font-semibold text-center cursor-pointer block transition hover:bg-beige-300 dark:hover:bg-gray-600 flex items-center justify-center gap-2 ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <span>選擇 JSON 備份檔</span>
+            </span>
+            <input
+              type="file"
+              accept="application/json"
+              onChange={handleImport}
+              className="hidden"
+              disabled={isImporting}
+            />
+          </label>
+        </div>
+      </div>
+      
+      {/* Status Message */}
+      {importStatus && (
+        <div className={`mt-6 text-center text-sm p-3 rounded-lg transition-opacity duration-300 ${
+            importStatus.includes('成功') ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200' :
+            importStatus.includes('失敗') ? 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200' :
+            'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
+          }`}>
+          <p>{importStatus}</p>
+        </div>
+      )}
     </div>
   );
 };
