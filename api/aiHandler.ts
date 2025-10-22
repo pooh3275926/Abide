@@ -85,7 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
-      // 5️⃣ 快速讀經（只改這個）
+      // 5️⃣ 快速讀經
       case 'quickRead': {
         const userInput = payload.userInput || '';
         const prompt = `
@@ -104,7 +104,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
 
-        // 使用正則抓取 {} 內的 JSON，避免多餘文字導致解析失敗
         const match = response.text?.match(/\{[\s\S]*\}/);
         let parsedResult: any = {};
         try {
@@ -121,37 +120,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
-      // 6️⃣ 福音卡片
+      // 6️⃣ 福音卡片（修改版）
       case 'jesusSaidCard': {
-        const prompt = `生成福音卡片（繁體中文） JSON: {verse, message, prayer}`;
+        const prompt = `
+生成一張福音卡片（繁體中文），JSON 格式如下：
+{
+  "verse": "經文",
+  "message": "耶穌今日對你說的話",
+  "prayer": "對應禱告"
+}
+請只回傳完整 JSON，不要額外文字。
+`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                verse: { type: Type.STRING },
-                message: { type: Type.STRING },
-                prayer: { type: Type.STRING }
-              }
-            }
-          }
         });
 
+        // 嘗試抓取 JSON
+        const match = response.text?.match(/\{[\s\S]*\}/);
         let parsedResult: any = {};
         try {
-          parsedResult = JSON.parse(response.text?.trim() || '{}');
+          parsedResult = match ? JSON.parse(match[0]) : {};
         } catch {
           parsedResult = {};
         }
 
+        // 提供預設值，避免前端拿到空值
         result = {
-          verse: parsedResult.verse || '',
-          message: parsedResult.message || '',
-          prayer: parsedResult.prayer || ''
+          verse: parsedResult.verse || '今日經文暫無',
+          message: parsedResult.message || '耶穌對你說暫無內容',
+          prayer: parsedResult.prayer || '回應禱告暫無'
         };
         break;
       }
