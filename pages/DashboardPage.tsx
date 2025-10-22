@@ -278,7 +278,7 @@ const INeedYouPage: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-grow pr-4">
                       <p className="text-sm text-gray-500 dark:text-gray-400">{p.date}</p>
-                      <p className="font-semibold mt-1 truncate">狀況：{p.situation}</p>
+                      <p className="font-semibold mt-1 whitespace-pre-wrap">狀況：{p.situation}</p>
                     </div>
                     {!isSelectMode && <span className={`text-xl transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>}
                   </div>
