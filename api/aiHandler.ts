@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const chapter = payload.chapter || '';
         const verse = payload.verse ? ` 節: ${payload.verse}` : '';
         const highlightsText = payload.highlights ? ` 亮光: ${payload.highlights}` : '';
-        const prompt = `請根據以下經文生成一段真誠、有同理心且帶有盼望的禱告詞（繁體中文）：
+        const prompt = `請根據以下經文生成一段真誠、有同理心且帶有盼望的禱告詞（繁體中文），僅指定節數：
 書卷: ${book}
 章: ${chapter}${verse}${highlightsText}`;
 
@@ -80,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const book = payload.book || '';
         const chapter = payload.chapter || '';
         const verse = payload.verse ? ` 節: ${payload.verse}` : '';
-        const prompt = `請為以下經文生成摘要式的經文解析（繁體中文）：
+        const prompt = `請根據以下經文生成摘要式的經文解析（繁體中文），僅分析指定節數：
 書卷: ${book}
 章: ${chapter}${verse}`;
 
@@ -98,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const book = payload.book || '';
         const chapter = payload.chapter || '';
         const verse = payload.verse ? ` 節: ${payload.verse}` : '';
-        const prompt = `請根據以下經文生成實用的應用建議（繁體中文）：
+        const prompt = `請根據以下經文生成實用的應用建議（繁體中文），僅指定節數：
 書卷: ${book}
 章: ${chapter}${verse}`;
 
@@ -181,3 +181,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: err.message || 'AI 生成失敗' });
   }
 }
+
