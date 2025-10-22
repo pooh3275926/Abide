@@ -33,7 +33,7 @@ const CardPreview: React.FC<{
   <div className="relative">
     <button
       onClick={isSelectMode ? onToggleSelect : onClick}
-      className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md p-4 w-full aspect-[3/4] flex flex-col justify-center items-center text-center hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT ${isSelected ? 'ring-2 ring-gold-dark' : ''}`}
+      className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md p-4 w-full h-64 flex flex-col justify-start items-center text-center hover:shadow-xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT ${isSelected ? 'ring-2 ring-gold-dark' : ''}`}
       aria-label={`查看卡片: ${card.verse}`}
     >
       <p className="text-sm italic text-gold-dark dark:text-gold-light">"{card.verse.split('（')[0]}"</p>
