@@ -18,6 +18,7 @@ const JournalForm: React.FC<{
       date: new Date().toISOString().split('T')[0],
       book: BIBLE_BOOKS[0].name,
       chapter: 1,
+      verse: '',
       highlights: '',
       scriptureAnalysis: '',
       applicationHelper: '',
@@ -26,6 +27,7 @@ const JournalForm: React.FC<{
       completed: false,
     }
   );
+
   const [isGenerating, setIsGenerating] = useState({ application: false, prayer: false, analysis: false });
   const selectedBook = BIBLE_BOOKS.find(b => b.name === formData.book);
 
@@ -46,7 +48,7 @@ const JournalForm: React.FC<{
   const handleGenerateAnalysis = async () => {
     setIsGenerating(prev => ({ ...prev, analysis: true }));
     try {
-      const result = await generateScriptureAnalysis(formData.book, formData.chapter);
+      const result = await generateScriptureAnalysis(formData.book, formData.chapter, formData.verse);
       setFormData(prev => ({ ...prev, scriptureAnalysis: result || '生成失敗，請稍後再試。' }));
     } catch (err) {
       console.error(err);
@@ -59,7 +61,7 @@ const JournalForm: React.FC<{
   const handleGenerateApplication = async () => {
     setIsGenerating(prev => ({ ...prev, application: true }));
     try {
-      const result = await generateApplication(formData.book, formData.chapter);
+      const result = await generateApplication(formData.book, formData.chapter, formData.verse);
       setFormData(prev => ({ ...prev, applicationHelper: result || '生成失敗，請稍後再試。' }));
     } catch (err) {
       console.error(err);
@@ -76,7 +78,7 @@ const JournalForm: React.FC<{
     }
     setIsGenerating(prev => ({ ...prev, prayer: true }));
     try {
-      const situation = `書卷：${formData.book} 章節：${formData.chapter} 亮光：${formData.highlights}`;
+      const situation = `書卷：${formData.book} 章節：${formData.chapter} 經節：${formData.verse || ''} 亮光：${formData.highlights}`;
       const result = await generatePrayer(situation);
       setFormData(prev => ({ ...prev, prayer: result || '生成失敗，請稍後再試。' }));
     } catch (err) {
@@ -93,7 +95,7 @@ const JournalForm: React.FC<{
       <div className="bg-beige-50 dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">{entry ? '編輯' : '新增'}日記</h2>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <input type="date" name="date" value={formData.date} onChange={handleChange} className="p-2 rounded border bg-white dark:bg-gray-700" />
             <select name="book" value={formData.book} onChange={handleChange} className="p-2 rounded border bg-white dark:bg-gray-700">
               {BIBLE_BOOKS.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
@@ -151,8 +153,6 @@ const JournalPage: React.FC = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-
-  // 新增狀態
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -166,43 +166,35 @@ const JournalPage: React.FC = () => {
         String(entry.chapter).includes(lowerCaseSearchTerm) ||
         entry.highlights.toLowerCase().includes(lowerCaseSearchTerm)
       )
-      .sort((a, b) => {
-        if (sortOrder === 'desc') {
-            return b.date.localeCompare(a.date);
-        }
-        return a.date.localeCompare(b.date);
-      });
+      .sort((a, b) => sortOrder === 'desc' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date));
   }, [entries, searchTerm, sortOrder]);
 
   const handleSave = (entry: JournalEntry) => {
     const oldEntry = entries.find(e => e.id === entry.id);
     const wasCompleted = oldEntry?.completed ?? false;
-    if (entry.completed && !wasCompleted) {
-        setGracePoints(prev => prev + 1);
-    }
-    
+    if (entry.completed && !wasCompleted) setGracePoints(prev => prev + 1);
+
+    // 生成標題
+    const title = `${entry.book} ${entry.chapter}${entry.verse ? `:${entry.verse}` : ''}`;
+    const entryWithTitle = { ...entry, title };
+
     setEntries(prev => {
-      const existingIndex = prev.findIndex(e => e.id === entry.id);
-      if (existingIndex > -1) {
+      const idx = prev.findIndex(e => e.id === entry.id);
+      if (idx > -1) {
         const newEntries = [...prev];
-        newEntries[existingIndex] = entry;
+        newEntries[idx] = entryWithTitle;
         return newEntries;
       }
-      return [...prev, entry];
+      return [...prev, entryWithTitle];
     });
 
     setTrackerProgress(prev => {
       const bookProgress = { ...(prev[entry.book] || {}) };
-      
-      if (entry.completed) {
-        bookProgress[entry.chapter] = true;
-      } else {
-        delete bookProgress[entry.chapter];
-      }
+      if (entry.completed) bookProgress[entry.chapter] = true;
+      else delete bookProgress[entry.chapter];
 
-      if (Object.keys(bookProgress).length > 0) {
-        return { ...prev, [entry.book]: bookProgress };
-      } else {
+      if (Object.keys(bookProgress).length > 0) return { ...prev, [entry.book]: bookProgress };
+      else {
         const newProgress = { ...prev };
         delete newProgress[entry.book];
         return newProgress;
@@ -230,49 +222,42 @@ const JournalPage: React.FC = () => {
     const entriesToDelete = entries.filter(e => itemsToDelete.has(e.id));
     const completedEntriesToDelete = entriesToDelete.filter(e => e.completed);
 
-    // 更新 tracker progress
     if (completedEntriesToDelete.length > 0) {
-        setTrackerProgress(currentProgress => {
-            const newProgress = JSON.parse(JSON.stringify(currentProgress)); // Deep copy
-            completedEntriesToDelete.forEach(entry => {
-                if (newProgress[entry.book]) {
-                    delete newProgress[entry.book][entry.chapter];
-                    if (Object.keys(newProgress[entry.book]).length === 0) {
-                        delete newProgress[entry.book];
-                    }
-                }
-            });
-            return newProgress;
+      setTrackerProgress(current => {
+        const newProgress = JSON.parse(JSON.stringify(current));
+        completedEntriesToDelete.forEach(entry => {
+          if (newProgress[entry.book]) {
+            delete newProgress[entry.book][entry.chapter];
+            if (Object.keys(newProgress[entry.book]).length === 0) delete newProgress[entry.book];
+          }
         });
+        return newProgress;
+      });
     }
 
     setEntries(prev => prev.filter(e => !itemsToDelete.has(e.id)));
-    
-    // Reset state
     setItemsToDelete(new Set());
     setShowConfirmation(false);
     setIsSelectMode(false);
     setSelectedIds(new Set());
   };
-  
+
   const handleToggleSelection = (id: string) => {
     setSelectedIds(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(id)) {
-            newSet.delete(id);
-        } else {
-            newSet.add(id);
-        }
-        return newSet;
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
     });
   };
 
   const handleToggleExpand = (id: string) => {
-    setExpandedEntryId(prevId => (prevId === id ? null : id));
+    setExpandedEntryId(prev => (prev === id ? null : id));
   };
 
   return (
     <div>
+      {/* 搜尋、排序、新增、多選區 */}
       <div className="flex justify-between items-center mb-6 gap-4">
         {!isSelectMode ? (
           <>
@@ -280,35 +265,25 @@ const JournalPage: React.FC = () => {
                 type="text"
                 placeholder="搜尋書卷、章節或亮光..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
             />
             <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">
               {sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}
             </button>
-            <button onClick={() => setIsSelectMode(true)} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">
-              多選
-            </button>
-            <button 
-                onClick={() => { setEditingEntry(null); setIsFormOpen(true); }} 
-                className="px-6 py-2 bg-gold-DEFAULT text-black dark:text-white rounded-lg shadow-md hover:bg-gold-dark transition-colors whitespace-nowrap"
-            >
-              新增
-            </button>
+            <button onClick={() => setIsSelectMode(true)} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">多選</button>
+            <button onClick={() => { setEditingEntry(null); setIsFormOpen(true); }} className="px-6 py-2 bg-gold-DEFAULT text-black dark:text-white rounded-lg shadow-md hover:bg-gold-dark transition-colors whitespace-nowrap">新增</button>
           </>
         ) : (
           <div className="w-full flex justify-between items-center p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
-            <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">
-              取消
-            </button>
+            <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">取消</button>
             <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
-            <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">
-              刪除
-            </button>
+            <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">刪除</button>
           </div>
         )}
       </div>
 
+      {/* 日記列表 */}
       <div className="space-y-4">
         {sortedEntries.length > 0 ? (
           sortedEntries.map(entry => {
@@ -331,37 +306,21 @@ const JournalPage: React.FC = () => {
                   onClick={() => isSelectMode ? handleToggleSelection(entry.id) : handleToggleExpand(entry.id)}
                   role="button" 
                   tabIndex={0} 
-                  onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                          isSelectMode ? handleToggleSelection(entry.id) : handleToggleExpand(entry.id);
-                      }
-                  }}
+                  onKeyDown={e => { if (e.key === 'Enter') isSelectMode ? handleToggleSelection(entry.id) : handleToggleExpand(entry.id); }}
                   aria-expanded={isExpanded}
                 >
                   <div className="flex-grow">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-gray-500 dark:text-gray-400 text-sm">{entry.date}</p>
-                        <h3 className="text-lg font-bold">{entry.book} {entry.chapter}</h3>
+                        <h3 className="text-lg font-bold">{entry.title}</h3>
                         {!isExpanded && <p className="mt-2 text-sm italic">"{entry.highlights.substring(0, 100)}{entry.highlights.length > 100 ? '...' : ''}"</p>}
                       </div>
                       {!isSelectMode && (
                         <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                           {entry.completed && <span title="已完成" className="text-xl">✓</span>}
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); setIsFormOpen(true); }}
-                            className="text-xl p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                            aria-label={`編輯日記 ${entry.book} ${entry.chapter}`}
-                          >
-                            ᝰ
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([entry.id])); }}
-                            className="text-xl p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50"
-                            aria-label={`刪除日記 ${entry.book} ${entry.chapter}`}
-                          >
-                            ✘
-                          </button>
+                          <button onClick={e => { e.stopPropagation(); setEditingEntry(entry); setIsFormOpen(true); }} className="text-xl p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50" aria-label={`編輯日記 ${entry.book} ${entry.chapter}`}>ᝰ</button>
+                          <button onClick={e => { e.stopPropagation(); handleDeleteRequest(new Set([entry.id])); }} className="text-xl p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50" aria-label={`刪除日記 ${entry.book} ${entry.chapter}`}>✘</button>
                         </div>
                       )}
                     </div>
