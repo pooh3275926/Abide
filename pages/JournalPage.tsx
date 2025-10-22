@@ -44,50 +44,6 @@ const JournalForm: React.FC<{
     }
   };
 
-  // ---------------- AI 生成 ----------------
-  const handleGenerateAnalysis = async () => {
-    setIsGenerating(prev => ({ ...prev, analysis: true }));
-    try {
-      const verseRange = formData.verse ? ` 節: ${formData.verse}` : '';
-      const result = await generateScriptureAnalysis(formData.book, formData.chapter, formData.verse);
-      setFormData(prev => ({ ...prev, scriptureAnalysis: result || '生成失敗，請稍後再試。' }));
-    } catch (err) {
-      console.error(err);
-      setFormData(prev => ({ ...prev, scriptureAnalysis: '生成經文解析時發生錯誤，請稍後再試。' }));
-    } finally {
-      setIsGenerating(prev => ({ ...prev, analysis: false }));
-    }
-  };
-
-  const handleGenerateApplication = async () => {
-    setIsGenerating(prev => ({ ...prev, application: true }));
-    try {
-      const verseRange = formData.verse ? ` 節: ${formData.verse}` : '';
-      const result = await generateApplication(formData.book, formData.chapter, formData.verse);
-      setFormData(prev => ({ ...prev, applicationHelper: result || '生成失敗，請稍後再試。' }));
-    } catch (err) {
-      console.error(err);
-      setFormData(prev => ({ ...prev, applicationHelper: '生成應用建議時發生錯誤，請稍後再試。' }));
-    } finally {
-      setIsGenerating(prev => ({ ...prev, application: false }));
-    }
-  };
-
-  const handleGeneratePrayer = async () => {
-    setIsGenerating(prev => ({ ...prev, prayer: true }));
-    try {
-      const situation = `書卷：${formData.book} 章節：${formData.chapter}${formData.verse ? ` 經節：${formData.verse}` : ''}${formData.highlights ? ` 亮光：${formData.highlights}` : ''}`;
-      const result = await generatePrayer(situation);
-      setFormData(prev => ({ ...prev, prayer: result || '生成失敗，請稍後再試。' }));
-    } catch (err) {
-      console.error(err);
-      setFormData(prev => ({ ...prev, prayer: '生成禱告時發生錯誤，請稍後再試。' }));
-    } finally {
-      setIsGenerating(prev => ({ ...prev, prayer: false }));
-    }
-  };
-  // ---------------- AI 生成結束 ----------------
-
   return (
     <div className="fixed inset-0 bg-black/50 z-20 flex justify-center items-center p-4">
       <div className="bg-beige-50 dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -106,25 +62,7 @@ const JournalForm: React.FC<{
 
           <textarea name="highlights" placeholder="靈修亮光" value={formData.highlights} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
 
-          <div>
-            <label className="font-semibold">經文解析</label>
-            <textarea name="scriptureAnalysis" placeholder="AI 生成的經文解析" value={formData.scriptureAnalysis} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700 mt-1" />
-            <button onClick={handleGenerateAnalysis} disabled={isGenerating.analysis} className="mt-1 px-3 py-1 text-sm bg-gold-light dark:bg-gold-dark rounded disabled:opacity-50">{isGenerating.analysis ? '生成中...' : '🤖 產生解析'}</button>
-          </div>
-
-          <div>
-            <label className="font-semibold">應用小幫手</label>
-            <textarea name="applicationHelper" placeholder="AI 生成的應用建議" value={formData.applicationHelper} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700 mt-1" />
-            <button onClick={handleGenerateApplication} disabled={isGenerating.application} className="mt-1 px-3 py-1 text-sm bg-gold-light dark:bg-gold-dark rounded disabled:opacity-50">{isGenerating.application ? '生成中...' : '🤖 產生建議'}</button>
-          </div>
-
           <textarea name="godMessage" placeholder="神想告訴我什麼？" value={formData.godMessage} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
-
-          <div>
-            <label className="font-semibold">禱告</label>
-            <textarea name="prayer" placeholder="AI 生成或手動輸入的禱告" value={formData.prayer} onChange={handleChange} rows={4} className="w-full p-2 rounded border bg-white dark:bg-gray-700 mt-1" />
-            <button onClick={handleGeneratePrayer} disabled={isGenerating.prayer} className="mt-1 px-3 py-1 text-sm bg-gold-light dark:bg-gold-dark rounded disabled:opacity-50">{isGenerating.prayer ? '生成中...' : '🤖 產生禱告'}</button>
-          </div>
 
           <div className="flex items-center">
             <input type="checkbox" id="completed" name="completed" checked={formData.completed} onChange={handleChange} className="h-4 w-4 rounded" />
