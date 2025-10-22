@@ -48,6 +48,7 @@ const JournalForm: React.FC<{
   const handleGenerateAnalysis = async () => {
     setIsGenerating(prev => ({ ...prev, analysis: true }));
     try {
+      const verseRange = formData.verse ? ` 節: ${formData.verse}` : '';
       const result = await generateScriptureAnalysis(formData.book, formData.chapter, formData.verse);
       setFormData(prev => ({ ...prev, scriptureAnalysis: result || '生成失敗，請稍後再試。' }));
     } catch (err) {
@@ -61,6 +62,7 @@ const JournalForm: React.FC<{
   const handleGenerateApplication = async () => {
     setIsGenerating(prev => ({ ...prev, application: true }));
     try {
+      const verseRange = formData.verse ? ` 節: ${formData.verse}` : '';
       const result = await generateApplication(formData.book, formData.chapter, formData.verse);
       setFormData(prev => ({ ...prev, applicationHelper: result || '生成失敗，請稍後再試。' }));
     } catch (err) {
