@@ -72,13 +72,9 @@ const JournalForm: React.FC<{
   };
 
   const handleGeneratePrayer = async () => {
-    if (!formData.highlights.trim()) {
-      alert('請先輸入亮光或摘要，AI 才能生成禱告。');
-      return;
-    }
     setIsGenerating(prev => ({ ...prev, prayer: true }));
     try {
-      const situation = `書卷：${formData.book} 章節：${formData.chapter} 經節：${formData.verse || ''} 亮光：${formData.highlights}`;
+      const situation = `書卷：${formData.book} 章節：${formData.chapter}${formData.verse ? ` 經節：${formData.verse}` : ''}${formData.highlights ? ` 亮光：${formData.highlights}` : ''}`;
       const result = await generatePrayer(situation);
       setFormData(prev => ({ ...prev, prayer: result || '生成失敗，請稍後再試。' }));
     } catch (err) {
