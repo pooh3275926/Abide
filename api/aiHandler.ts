@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // 環境變數
@@ -9,6 +9,22 @@ if (!API_KEY) {
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+// 輔助函式：嘗試從文字中抓 JSON
+function tryParseJSON(text: string, defaultValue: any = {}) {
+  if (!text) return defaultValue;
+  try {
+    return JSON.parse(text);
+  } catch {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {}
+    }
+    return defaultValue;
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action, payload } = req.body || {};
@@ -85,7 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
-      // 5️⃣ 快速讀經
+      // 5️⃣ 快速讀經（保持不動）
       case 'quickRead': {
         const userInput = payload.userInput || '';
         const prompt = `
@@ -104,14 +120,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
 
-        const match = response.text?.match(/\{[\s\S]*\}/);
-        let parsedResult: any = {};
-        try {
-          parsedResult = match ? JSON.parse(match[0]) : {};
-        } catch {
-          parsedResult = {};
-        }
-
+        const parsedResult = tryParseJSON(response.text, {});
         result = {
           analysis: parsedResult.analysis || 'AI 暫無回應',
           application: parsedResult.application || 'AI 暫無回應',
@@ -120,7 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
-      // 6️⃣ 福音卡片（修改版）
+      // 6️⃣ 福音卡片（改穩定版）
       case 'jesusSaidCard': {
         const prompt = `
 生成一張福音卡片（繁體中文），JSON 格式如下：
@@ -137,16 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
 
-        // 嘗試抓取 JSON
-        const match = response.text?.match(/\{[\s\S]*\}/);
-        let parsedResult: any = {};
-        try {
-          parsedResult = match ? JSON.parse(match[0]) : {};
-        } catch {
-          parsedResult = {};
-        }
-
-        // 提供預設值，避免前端拿到空值
+        const parsedResult = tryParseJSON(response.text, {});
         result = {
           verse: parsedResult.verse || '今日經文暫無',
           message: parsedResult.message || '耶穌對你說暫無內容',
