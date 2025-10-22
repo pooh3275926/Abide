@@ -120,11 +120,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
 
-        const parsedResult = tryParseJSON(response.text, {});
+        const parsedResult = tryParseJSON(response.text, {
+          analysis: 'AI 暫無回應',
+          application: 'AI 暫無回應',
+          prayer: 'AI 暫無回應'
+        });
+
         result = {
-          analysis: parsedResult.analysis || 'AI 暫無回應',
-          application: parsedResult.application || 'AI 暫無回應',
-          prayer: parsedResult.prayer || 'AI 暫無回應'
+          analysis: parsedResult.analysis,
+          application: parsedResult.application,
+          prayer: parsedResult.prayer
         };
         break;
       }
@@ -166,3 +171,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: err.message || 'AI 生成失敗' });
   }
 }
+
