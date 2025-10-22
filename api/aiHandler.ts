@@ -41,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let result: any;
 
     switch (action) {
+
       // 1️⃣ 使用者情境禱告
       case 'situationalPrayer': {
         const situationText = payload.situation || payload.highlights || '無特定情況';
@@ -55,12 +56,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
-      // 2️⃣ 靈修禱告（經文 + 亮光）
+      // 2️⃣ 靈修禱告（經文 + 亮光，可單用經節）
       case 'devotionalPrayer': {
         const book = payload.book || '';
         const chapter = payload.chapter || '';
-        const highlightsText = payload.highlights || '無特定亮光';
-        const prompt = `根據聖經章節 ${book} 第 ${chapter} 章以及以下靈修亮光：「${highlightsText}」，生成一段真誠、有同理心且帶有盼望的禱告詞（繁體中文）。`;
+        const verse = payload.verse ? ` 節: ${payload.verse}` : '';
+        const highlightsText = payload.highlights ? ` 亮光: ${payload.highlights}` : '';
+        const prompt = `請根據以下經文生成一段真誠、有同理心且帶有盼望的禱告詞（繁體中文）：
+書卷: ${book}
+章: ${chapter}${verse}${highlightsText}`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
@@ -75,7 +79,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'scriptureAnalysis': {
         const book = payload.book || '';
         const chapter = payload.chapter || '';
-        const prompt = `請為以下經文生成摘要式的經文解析（繁體中文）：${book} ${chapter}`;
+        const verse = payload.verse ? ` 節: ${payload.verse}` : '';
+        const prompt = `請為以下經文生成摘要式的經文解析（繁體中文）：
+書卷: ${book}
+章: ${chapter}${verse}`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
@@ -90,7 +97,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'applicationHelper': {
         const book = payload.book || '';
         const chapter = payload.chapter || '';
-        const prompt = `請根據以下經文生成實用的應用建議（繁體中文）：${book} ${chapter}`;
+        const verse = payload.verse ? ` 節: ${payload.verse}` : '';
+        const prompt = `請根據以下經文生成實用的應用建議（繁體中文）：
+書卷: ${book}
+章: ${chapter}${verse}`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
@@ -171,4 +181,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: err.message || 'AI 生成失敗' });
   }
 }
-
