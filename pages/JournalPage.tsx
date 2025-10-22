@@ -101,6 +101,7 @@ const JournalForm: React.FC<{
             <select name="chapter" value={formData.chapter} onChange={handleChange} className="p-2 rounded border bg-white dark:bg-gray-700">
               {selectedBook && Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
+            <input type="text" name="verse" placeholder="輸入經節 (例如 1-5 或 3,7,9)" value={formData.verse || ''} onChange={handleChange} className="p-2 rounded border bg-white dark:bg-gray-700" />
           </div>
 
           <textarea name="highlights" placeholder="靈修亮光" value={formData.highlights} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
