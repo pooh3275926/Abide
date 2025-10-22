@@ -85,38 +85,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
-      // 5️⃣ 快速讀經
+      // 5️⃣ 快速讀經（只改這個）
       case 'quickRead': {
         const userInput = payload.userInput || '';
-        const prompt = `你是一位聖經研究助理。請根據使用者輸入（繁體中文）「${userInput}」生成 JSON：{ analysis, application, prayer }`;
+        const prompt = `
+你是一位聖經研究助理。
+請根據使用者輸入（繁體中文）「${userInput}」生成 JSON：
+{
+  "analysis": "提供經文摘要與解析",
+  "application": "提供實用應用建議",
+  "prayer": "提供對應禱告"
+}
+請確保整個回傳內容是有效 JSON，不要加多餘文字或說明。
+`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                analysis: { type: Type.STRING },
-                application: { type: Type.STRING },
-                prayer: { type: Type.STRING }
-              }
-            }
-          }
         });
 
+        // 使用正則抓取 {} 內的 JSON，避免多餘文字導致解析失敗
+        const match = response.text?.match(/\{[\s\S]*\}/);
         let parsedResult: any = {};
         try {
-          parsedResult = JSON.parse(response.text?.trim() || '{}');
+          parsedResult = match ? JSON.parse(match[0]) : {};
         } catch {
           parsedResult = {};
         }
 
         result = {
-          analysis: parsedResult.analysis || '',
-          application: parsedResult.application || '',
-          prayer: parsedResult.prayer || ''
+          analysis: parsedResult.analysis || 'AI 暫無回應',
+          application: parsedResult.application || 'AI 暫無回應',
+          prayer: parsedResult.prayer || 'AI 暫無回應'
         };
         break;
       }
