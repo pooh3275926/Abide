@@ -204,9 +204,6 @@ export default function BiblePage() {
           !loading && !error && <p className="text-center text-gray-500">請選擇書卷與章節後點擊「查詢」。</p>
         )}
       </div>
-
-      {/* 下方控制列 */}
+    <div className="mt-6">
       <ChapterNavigation />
     </div>
-  );
-}
