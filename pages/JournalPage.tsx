@@ -264,11 +264,8 @@ const JournalPage: React.FC = () => {
                 </div>
                 {isExpanded && (
                   <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-sm space-y-2">
-                    <p><strong>亮光:</strong> {entry.highlights}</p>
-                    <p><strong>經文解析:</strong> {entry.scriptureAnalysis}</p>
-                    <p><strong>應用小幫手:</strong> {entry.applicationHelper}</p>
+                    <p><strong>靈修亮光:</strong> {entry.highlights}</p>
                     <p><strong>神想告訴我:</strong> {entry.godMessage}</p>
-                    <p><strong>禱告:</strong> {entry.prayer}</p>
                   </div>
                 )}
               </div>
