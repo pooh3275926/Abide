@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Page } from '../App';
 
@@ -16,7 +15,7 @@ const NavItem: React.FC<{
   <button
     onClick={onClick}
     className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${
-      isActive ? 'text-gold-dark' : 'text-gray-500'
+      isActive ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400'
     }`}
   >
     <span className="text-2xl">{icon}</span>
@@ -46,7 +45,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activePage, setActivePage }) => {
   const currentActiveTab = getActiveTab(activePage);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-beige-200/90 backdrop-blur-sm shadow-[0_-2px_5px_-1px_rgba(0,0,0,0.1)] flex justify-around items-center">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-beige-200/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-[0_-2px_5px_-1px_rgba(0,0,0,0.1)] flex justify-around items-center">
       {navItems.map((item) => (
         <NavItem
           key={item.page}
