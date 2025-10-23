@@ -1,4 +1,4 @@
-// pages/BiblePage.tsx
+import './BiblePage.css';
 import { useState, useEffect } from 'react';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
