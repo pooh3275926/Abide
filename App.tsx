@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import INeedYouPage from './pages/DashboardPage';
 import TrackerPage from './pages/TrackerPage';
 import JournalPage from './pages/JournalPage';
@@ -10,9 +11,9 @@ import MorePage from './pages/MorePage'; // 新增更多頁面
 import BiblePage from './pages/BiblePage';
 import AIFunctionsPage from './pages/AIFunctionsPage';
 import MessageNotesPage from './pages/MessageNotesPage'; // Import the new page
+import SmallGroupSharePage from './pages/SmallGroupSharePage';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
-import { useLocalStorage } from './hooks/useLocalStorage';
 
 export type Page =
   | 'iNeedYou'
@@ -25,7 +26,8 @@ export type Page =
   | 'more' // 新增 more
   | 'bible'
   | 'ai'
-  | 'messageNotes'; // Add message notes page type
+  | 'messageNotes' // Add message notes page type
+  | 'smallGroup';
 
 const pageTitles: Record<Page, string> = {
   iNeedYou: '我需要祢',
@@ -39,20 +41,11 @@ const pageTitles: Record<Page, string> = {
   bible: '聖經',
   ai: 'AI 功能',
   messageNotes: '信息筆記', // Add title for message notes page
+  smallGroup: '小組分享',
 };
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('bible');
-  const [isDarkMode, setIsDarkMode] = useLocalStorage('darkMode', false);
-
-  useEffect(() => {
-    const html = document.documentElement;
-    if (isDarkMode) {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   const renderPage = () => {
     switch (activePage) {
@@ -78,17 +71,17 @@ const App: React.FC = () => {
         return <AIFunctionsPage setActivePage={setActivePage} />;
       case 'messageNotes': // Add rendering case for message notes page
         return <MessageNotesPage />;
+      case 'smallGroup':
+        return <SmallGroupSharePage />;
       default:
         return <BiblePage />;
     }
   };
 
   return (
-    <div className="min-h-screen font-sans text-gray-800 bg-beige-100 dark:bg-gray-900 dark:text-gray-200">
+    <div className="min-h-screen font-sans text-gray-800 bg-beige-100">
       <Header
         title={pageTitles[activePage]}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
       />
       <main className="pb-20 pt-24 px-4">{renderPage()}</main>
       <BottomNav activePage={activePage} setActivePage={setActivePage} />

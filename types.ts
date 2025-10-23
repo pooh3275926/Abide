@@ -73,3 +73,14 @@ export interface MessageNote {
   content: string;
   tags: string[];
 }
+
+export interface SmallGroupShare {
+  id: string;
+  date: string; // YYYY-MM-DD
+  groupName: string;
+  book: string;
+  chapter: number;
+  verse: string;
+  topic: string;
+  myShare: string;
+}

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 
 const SettingsPage: React.FC = () => {
@@ -15,6 +14,7 @@ const SettingsPage: React.FC = () => {
         jesusSaidCards: JSON.parse(localStorage.getItem("jesusSaidCards") || "[]"),
         quickReadHistory: JSON.parse(localStorage.getItem("quickReadHistory") || "[]"),
         messageNotes: JSON.parse(localStorage.getItem("messageNotes") || "[]"),
+        smallGroupShares: JSON.parse(localStorage.getItem("smallGroupShares") || "[]"),
         bibleTrackerProgress: JSON.parse(localStorage.getItem("bibleTrackerProgress") || "{}"),
         gracePoints: JSON.parse(localStorage.getItem("gracePoints") || "0"),
       };
@@ -57,14 +57,14 @@ const SettingsPage: React.FC = () => {
 
       setImportStatus("正在合併資料...");
 
-      // FIX: Explicitly type `itemKeys` to ensure `key` is a string, resolving errors on lines 68 and 80.
-      const itemKeys: ("journalEntries" | "prayerItems" | "situationalPrayers" | "jesusSaidCards" | "quickReadHistory" | "messageNotes")[] = [
+      const itemKeys: ("journalEntries" | "prayerItems" | "situationalPrayers" | "jesusSaidCards" | "quickReadHistory" | "messageNotes" | "smallGroupShares")[] = [
         "journalEntries",
         "prayerItems",
         "situationalPrayers",
         "jesusSaidCards",
         "quickReadHistory",
         "messageNotes",
+        "smallGroupShares",
       ];
 
       itemKeys.forEach((key) => {

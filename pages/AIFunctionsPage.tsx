@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Page } from '../App';
 
@@ -11,6 +10,7 @@ const AIFunctionsPage: React.FC<AIFunctionsPageProps> = ({ setActivePage }) => {
     { page: 'iNeedYou', label: '我需要祢', icon: '🌱', description: '為您的處境生成個人化禱告' },
     { page: 'quickRead', label: '快速讀經', icon: '⚡️', description: 'AI 協助您快速領受神的話語' },
     { page: 'jesusSaid', label: '耶穌說', icon: '💌', description: '每日領受鼓勵與盼望' },
+    { page: 'smallGroup', label: '小組分享', icon: '👥', description: 'AI 輔助，讓分享更有深度' },
   ];
 
   return (
