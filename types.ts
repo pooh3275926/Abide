@@ -8,11 +8,11 @@ export interface JournalEntry {
   // FIX: Added optional `title` property to the JournalEntry type. A title is generated and added to the entry upon saving in JournalPage, but this property was missing from the type, causing a display error.
   title?: string;
   highlights: string;
-  scriptureAnalysis: string;
-  applicationHelper: string;
   godMessage: string;
-  prayer: string;
   completed: boolean;
+  likes: number;
+  liked: boolean;
+  comments: Comment[];
 }
 
 export interface Comment {
