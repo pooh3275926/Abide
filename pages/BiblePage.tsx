@@ -105,23 +105,30 @@ export default function BiblePage() {
     }
   };
 
-  const nextChapter = () => {
-    if (chap < chapters) {
-      setChap(chap + 1);
-    } else {
-      const idx = bibleBooksOrder.indexOf(book);
-      if (idx < bibleBooksOrder.length - 1) {
-        setBook(bibleBooksOrder[idx + 1]);
-        setChap(1);
-      }
-    }
-  };
+const nextChapter = () => {
+  const idx = bibleBooksOrder.indexOf(book);
+  if (chap < chapters) {
+    setChap(chap + 1);
+  } else if (idx < bibleBooksOrder.length - 1) {
+    const nextBook = bibleBooksOrder[idx + 1];
+    setBook(nextBook);
+    setChap(1);
+  }
+  // 已經是最後一章，不動
+};
 
-  const prevChapter = () => {
-    if (chap > 1) {
-      setChap(chap - 1);
-    }
-  };
+const prevChapter = () => {
+  const idx = bibleBooksOrder.indexOf(book);
+  if (chap > 1) {
+    setChap(chap - 1);
+  } else if (idx > 0) {
+    const prevBook = bibleBooksOrder[idx - 1];
+    setBook(prevBook);
+    setChap(maxChapters[prevBook]);
+  }
+  // 已經是第一章，不動
+};
+
 
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6">
@@ -172,34 +179,6 @@ export default function BiblePage() {
   </button>
 </div>
 
-
-const nextChapter = () => {
-  const idx = bibleBooksOrder.indexOf(book);
-  if (chap < chapters) {
-    setChap(chap + 1);
-  } else if (idx < bibleBooksOrder.length - 1) {
-    const nextBook = bibleBooksOrder[idx + 1];
-    setBook(nextBook);
-    setChap(1);
-  }
-  // 已經是最後一章，不動
-};
-
-const prevChapter = () => {
-  const idx = bibleBooksOrder.indexOf(book);
-  if (chap > 1) {
-    setChap(chap - 1);
-  } else if (idx > 0) {
-    const prevBook = bibleBooksOrder[idx - 1];
-    setBook(prevBook);
-    setChap(maxChapters[prevBook]);
-  }
-  // 已經是第一章，不動
-};
-
-
-
-
       {loading && <p className="text-center text-gray-500">讀取中...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
@@ -225,6 +204,7 @@ const prevChapter = () => {
     </div>
   );
 }
+
 
 
 
