@@ -1,8 +1,7 @@
 // pages/BiblePage.tsx
 import { useState, useEffect } from 'react';
-import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import './BiblePage.module.css'; // 動畫 CSS 檔
+import './BiblePage.css';
 
 type BibleVerse = {
   chineses: string;
@@ -61,14 +60,14 @@ export default function BiblePage() {
   const [chapters, setChapters] = useState(50);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
-  // 更新最大章節
+  // 更新章節最大值
   useEffect(() => {
     const maxChap = maxChapters[book] || 50;
     setChapters(maxChap);
-    if (chap > maxChap) setChap(maxChap);
+    if (chap > maxChap) setChap(1);
   }, [book]);
 
-  // 抓取經文
+  // 讀取經文
   useEffect(() => {
     const fetchBible = async () => {
       setLoading(true);
@@ -76,19 +75,19 @@ export default function BiblePage() {
       setVerses([]);
       try {
         const shortName = fullNameToShortName[book];
-        if (!shortName) throw new Error('書卷名稱錯誤');
+        if (!shortName) throw new Error('書卷名稱錯誤或不支援');
 
-        const res = await fetch(`/bible/${shortName}.json`);
+        const fileName = `${shortName}.json`;
+        const res = await fetch(`/bible/${fileName}`);
         if (!res.ok) throw new Error('檔案不存在');
 
         const data: BibleResponse = await res.json();
         const chapterVerses = data.record.filter(v => v.chap === chap);
-
-        if (chapterVerses.length === 0) setError('找不到該章經文');
+        if (chapterVerses.length === 0) setError('找不到該章經文。');
         else setVerses(chapterVerses);
       } catch (err) {
         console.error(err);
-        setError('讀取本地聖經資料失敗');
+        setError('讀取本地聖經資料失敗。');
       } finally {
         setLoading(false);
       }
@@ -109,6 +108,7 @@ export default function BiblePage() {
       setChap(chap - 1);
     }
   };
+
   const nextChap = () => {
     if (chap < chapters) {
       setDirection('right');
@@ -122,8 +122,8 @@ export default function BiblePage() {
         請查詢書卷與章節
       </h1>
 
-      {/* 書卷與章節選擇 */}
-      <div className="flex items-center justify-center gap-2 mb-4 flex-wrap sm:flex-nowrap">
+      {/* 控制列 */}
+      <div className="flex items-center justify-center gap-2 mb-6 flex-wrap sm:flex-nowrap">
         <input
           list="books"
           value={book}
@@ -146,16 +146,23 @@ export default function BiblePage() {
         >
           {Array.from({ length: chapters }, (_, i) => i + 1).map(c => <option key={c} value={c}>{c}</option>)}
         </select>
+
+        <button
+          onClick={() => setChap(chap)}
+          className="px-4 py-2 bg-gold-600 dark:bg-gold-500 text-white hover:bg-gold-500 dark:hover:bg-gold-400 transition font-semibold"
+        >
+          查詢
+        </button>
       </div>
 
-      {/* 章節切換 */}
+      {/* 章節左右切換 */}
       <div className="flex items-center justify-center gap-4 mb-6">
         <button onClick={prevChap} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-          <FaArrowLeft />
+          ◀
         </button>
         <h2 className="text-xl font-bold text-gold-700 dark:text-gold-300 drop-shadow">{book} 第 {chap} 章</h2>
         <button onClick={nextChap} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-          <FaArrowRight />
+          ▶
         </button>
       </div>
 
