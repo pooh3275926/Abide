@@ -16,7 +16,6 @@ const SettingsPage: React.FC = () => {
         messageNotes: JSON.parse(localStorage.getItem("messageNotes") || "[]"),
         smallGroupShares: JSON.parse(localStorage.getItem("smallGroupShares") || "[]"),
         bibleTrackerProgress: JSON.parse(localStorage.getItem("bibleTrackerProgress") || "{}"),
-        gracePoints: JSON.parse(localStorage.getItem("gracePoints") || "0"),
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -97,14 +96,6 @@ const SettingsPage: React.FC = () => {
         }
 
         localStorage.setItem("bibleTrackerProgress", JSON.stringify(mergedProgress));
-      }
-
-      if (typeof importedData.gracePoints === "number") {
-        const existingPoints = JSON.parse(localStorage.getItem("gracePoints") || "0");
-        localStorage.setItem(
-          "gracePoints",
-          JSON.stringify(existingPoints + importedData.gracePoints)
-        );
       }
       
       setImportStatus("✅ 匯入成功！系統將於 2 秒後重新整理。");
@@ -187,3 +178,4 @@ const SettingsPage: React.FC = () => {
 };
 
 export default SettingsPage;
+
