@@ -15,15 +15,24 @@ export interface JournalEntry {
   completed: boolean;
 }
 
-export interface PrayerItem {
+export interface Comment {
   id: string;
-  title: string;
-  person: string;
-  content: string;
-  prayerDate: string; // YYYY-MM-DD
-  answered: boolean;
-  answeredDate?: string; // YYYY-MM-DD
-  godsResponse?: string;
+  text: string;
+  createdAt: string; // ISO string for date
+}
+
+export interface PrayerItem {
+  id:string;
+  title:string;
+  person:string;
+  content:string;
+  prayerDate:string; // YYYY-MM-DD
+  answered:boolean;
+  answeredDate?:string; // YYYY-MM-DD
+  godsResponse?:string;
+  likes:number;
+  liked:boolean;
+  comments:Comment[];
 }
 
 export interface BibleBook {
