@@ -3,6 +3,10 @@ export interface JournalEntry {
   date: string; // YYYY-MM-DD
   book: string;
   chapter: number;
+  // FIX: Added optional `verse` property to the JournalEntry type. This property is used in the JournalForm for user input and for creating the entry title, but was missing from the type definition, causing multiple errors.
+  verse?: string;
+  // FIX: Added optional `title` property to the JournalEntry type. A title is generated and added to the entry upon saving in JournalPage, but this property was missing from the type, causing a display error.
+  title?: string;
   highlights: string;
   scriptureAnalysis: string;
   applicationHelper: string;
@@ -19,6 +23,7 @@ export interface PrayerItem {
   prayerDate: string; // YYYY-MM-DD
   answered: boolean;
   answeredDate?: string; // YYYY-MM-DD
+  godsResponse?: string;
 }
 
 export interface BibleBook {
