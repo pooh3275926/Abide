@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import INeedYouPage from './pages/DashboardPage';
 import TrackerPage from './pages/TrackerPage';
 import JournalPage from './pages/JournalPage';
@@ -12,7 +13,6 @@ import AIFunctionsPage from './pages/AIFunctionsPage';
 import MessageNotesPage from './pages/MessageNotesPage'; // Import the new page
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
-import { useLocalStorage } from './hooks/useLocalStorage';
 
 export type Page =
   | 'iNeedYou'
@@ -43,16 +43,6 @@ const pageTitles: Record<Page, string> = {
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('bible');
-  const [isDarkMode, setIsDarkMode] = useLocalStorage('darkMode', false);
-
-  useEffect(() => {
-    const html = document.documentElement;
-    if (isDarkMode) {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   const renderPage = () => {
     switch (activePage) {
@@ -84,11 +74,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen font-sans text-gray-800 bg-beige-100 dark:bg-gray-900 dark:text-gray-200">
+    <div className="min-h-screen font-sans text-gray-800 bg-beige-100">
       <Header
         title={pageTitles[activePage]}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
       />
       <main className="pb-20 pt-24 px-4">{renderPage()}</main>
       <BottomNav activePage={activePage} setActivePage={setActivePage} />
