@@ -111,8 +111,7 @@ export default function BiblePage() {
     if (chap < chapters) {
       setChap(chap + 1);
     } else if (idx < bibleBooksOrder.length - 1) {
-      const nextBook = bibleBooksOrder[idx + 1];
-      setBook(nextBook);
+      setBook(bibleBooksOrder[idx + 1]);
       setChap(1);
     }
   };
@@ -128,6 +127,7 @@ export default function BiblePage() {
     }
   };
 
+  // 導航列 Component
   const ChapterNavigation = () => (
     <div className="flex items-center justify-center gap-2 flex-wrap sm:flex-nowrap mb-6">
       {/* 左箭頭 */}
@@ -172,42 +172,44 @@ export default function BiblePage() {
     </div>
   );
 
-return (
-  <div className="max-w-3xl mx-auto p-4 sm:p-6">
-    <h1 className="mt-4 text-3xl font-extrabold text-center mb-6 text-gold-600 dark:text-gold-400 drop-shadow-md">
-      每天讀經會幸福哦
-    </h1>
+  // JSX return
+  return (
+    <div className="max-w-3xl mx-auto p-4 sm:p-6">
+      <h1 className="mt-4 text-3xl font-extrabold text-center mb-6 text-gold-600 dark:text-gold-400 drop-shadow-md">
+        每天讀經會幸福哦
+      </h1>
 
-    {/* 上方控制列 */}
-    <ChapterNavigation />
-
-    {loading && <p className="text-center text-gray-500">讀取中...</p>}
-    {error && <p className="text-center text-red-500">{error}</p>}
-
-    {/* 經文區 */}
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 leading-relaxed space-y-3 overflow-x-auto">
-      {verses.length > 0 ? (
-        <>
-          <h2 className="text-center font-bold mb-4 text-xl text-gold-700 dark:text-gold-300 drop-shadow">
-            {book} 第 {chap} 章
-          </h2>
-          <div className="space-y-2 text-gray-800 dark:text-gray-200">
-            {verses.map((v) => (
-              <p key={v.sec} className="p-2 hover:bg-yellow-50 dark:hover:bg-gray-700 rounded transition">
-                <span className="font-semibold mr-2 text-gold-600 dark:text-gold-400">{v.sec}</span>
-                {v.bible_text}
-              </p>
-            ))}
-          </div>
-        </>
-      ) : (
-        !loading && !error && <p className="text-center text-gray-500">請選擇書卷與章節後點擊「查詢」。</p>
-      )}
-    </div>
-
-    {/* 下方控制列 */}
-    <div className="mt-6">
+      {/* 上方控制列 */}
       <ChapterNavigation />
+
+      {loading && <p className="text-center text-gray-500">讀取中...</p>}
+      {error && <p className="text-center text-red-500">{error}</p>}
+
+      {/* 經文區 */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 leading-relaxed space-y-3 overflow-x-auto">
+        {verses.length > 0 ? (
+          <>
+            <h2 className="text-center font-bold mb-4 text-xl text-gold-700 dark:text-gold-300 drop-shadow">
+              {book} 第 {chap} 章
+            </h2>
+            <div className="space-y-2 text-gray-800 dark:text-gray-200">
+              {verses.map((v) => (
+                <p key={v.sec} className="p-2 hover:bg-yellow-50 dark:hover:bg-gray-700 rounded transition">
+                  <span className="font-semibold mr-2 text-gold-600 dark:text-gold-400">{v.sec}</span>
+                  {v.bible_text}
+                </p>
+              ))}
+            </div>
+          </>
+        ) : (
+          !loading && !error && <p className="text-center text-gray-500">請選擇書卷與章節後點擊「查詢」。</p>
+        )}
+      </div>
+
+      {/* 下方控制列 */}
+      <div className="mt-6">
+        <ChapterNavigation />
+      </div>
     </div>
-  </div> // ← 這裡是最外層 div 的閉合
-);
+  );
+}
