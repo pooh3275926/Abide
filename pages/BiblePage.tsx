@@ -18,11 +18,11 @@ type BibleResponse = {
 };
 
 const fullNameToShortName: Record<string, string> = {
-  /* 同前面的 fullNameToShortName */
+  /* 同你提供的 fullNameToShortName */
 };
 
 const maxChapters: Record<string, number> = {
-  /* 同前面的 maxChapters */
+  /* 同你提供的 maxChapters */
 };
 
 export default function BiblePage() {
@@ -41,7 +41,7 @@ export default function BiblePage() {
     if (chap > maxChap) setChap(maxChap);
   }, [book]);
 
-  // 讀取經文
+  // 讀取指定書卷章節
   useEffect(() => {
     const fetchBible = async () => {
       setLoading(true);
@@ -51,14 +51,18 @@ export default function BiblePage() {
         const shortName = fullNameToShortName[book];
         if (!shortName) throw new Error('書卷名稱錯誤或不支援。');
 
-        const fileName = `${shortName}.json`;
-        const res = await fetch(`/bible/${fileName}`);
+        const res = await fetch(`/bible/${shortName}.json`);
         if (!res.ok) throw new Error('檔案不存在');
 
         const data: BibleResponse = await res.json();
+
+        // 過濾指定章節
         const chapterVerses = data.record.filter(v => v.chap === chap);
-        if (!chapterVerses.length) setError('找不到該章經文。');
-        else setVerses(chapterVerses);
+        if (!chapterVerses.length) {
+          setError('找不到該章經文。');
+        } else {
+          setVerses(chapterVerses);
+        }
       } catch (err) {
         console.error(err);
         setError('讀取本地聖經資料失敗。');
@@ -69,6 +73,7 @@ export default function BiblePage() {
     fetchBible();
   }, [book, chap]);
 
+  // 左右章節切換
   const prevChap = () => {
     if (chap > 1) {
       setDirection('left');
@@ -97,7 +102,7 @@ export default function BiblePage() {
         請查詢書卷與章節
       </h1>
 
-      {/* 書卷選擇 */}
+      {/* 書卷與章節選擇 */}
       <div className="flex items-center justify-center gap-2 mb-4 flex-wrap sm:flex-nowrap">
         <input
           list="books"
@@ -119,7 +124,9 @@ export default function BiblePage() {
           }}
           className="w-20 p-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 shadow-sm"
         >
-          {Array.from({ length: chapters }, (_, i) => i + 1).map(c => <option key={c} value={c}>{c}</option>)}
+          {Array.from({ length: chapters }, (_, i) => i + 1).map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
         </select>
       </div>
 
