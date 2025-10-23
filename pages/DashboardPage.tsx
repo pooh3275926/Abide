@@ -285,7 +285,7 @@ const INeedYouPage: React.FC = () => {
 
                   {isExpanded && (
                     <div className="mt-4 pt-4 border-t border-beige-200 dark:border-gray-700">
-                      <h4 className="font-semibold text-sm text-gray-600 dark:text-gray-300">禱告內容</h4>
+                      <h4 className="font-semibold text-sm text-gray-600 dark:text-gray-300"></h4>
                       <p className="mt-1 text-sm whitespace-pre-wrap">{p.prayer}</p>
 
                       <div className="flex justify-end gap-2 mt-4">
