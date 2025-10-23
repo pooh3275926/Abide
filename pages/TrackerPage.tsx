@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { BibleBook } from '../types';
@@ -14,23 +13,23 @@ const BookItem: React.FC<{
     const progress = book.chapters > 0 ? (totalCompleted / book.chapters) * 100 : 0;
 
     return (
-        <div className="mb-2 bg-beige-50 rounded-lg shadow-sm transition-all">
+        <div className="mb-2 bg-beige-50 dark:bg-gray-800 rounded-lg shadow-sm transition-all">
             <button onClick={() => setIsOpen(!isOpen)} className="w-full p-4 text-left">
                 <div className="flex justify-between items-center">
                     <h3 className="font-bold text-lg">{book.name}</h3>
                     <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
                 </div>
                 <div className="mt-2 flex items-center gap-3">
-                    <div className="flex-grow bg-gold-light rounded-full h-2.5">
-                        <div className="bg-gold-dark h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                    <div className="flex-grow bg-gold-light dark:bg-gray-700 rounded-full h-2.5">
+                        <div className="bg-gold-dark dark:bg-gold-DEFAULT h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
                     </div>
-                    <p className="flex-shrink-0 text-sm text-gray-500 tabular-nums">
+                    <p className="flex-shrink-0 text-sm text-gray-500 dark:text-gray-400 tabular-nums">
                         {totalCompleted} / {book.chapters} ({Math.round(progress)}%)
                     </p>
                 </div>
             </button>
             {isOpen && (
-                <div className="p-4 border-t border-beige-200 grid grid-cols-5 sm:grid-cols-10 gap-2">
+                <div className="p-4 border-t border-beige-200 dark:border-gray-700 grid grid-cols-5 sm:grid-cols-10 gap-2">
                     {Array.from({ length: book.chapters }, (_, i) => i + 1).map(chapter => {
                         const isCompleted = completedChapters.has(chapter);
                         return (
@@ -39,8 +38,8 @@ const BookItem: React.FC<{
                                 onClick={() => onToggleChapter(book.name, chapter)}
                                 className={`flex items-center justify-center font-mono text-sm p-2 rounded-md transition-colors aspect-square ${
                                     isCompleted 
-                                    ? 'bg-gold-dark text-white font-bold' 
-                                    : 'bg-beige-100 hover:bg-beige-200'
+                                    ? 'bg-gold-dark text-white dark:bg-gold-DEFAULT dark:text-black font-bold' 
+                                    : 'bg-beige-100 dark:bg-gray-700 hover:bg-beige-200 dark:hover:bg-gray-600'
                                 }`}
                                 aria-label={`第 ${chapter} 章, 狀態: ${isCompleted ? '已完成' : '未完成'}`}
                             >
@@ -115,13 +114,13 @@ const TrackerPage: React.FC = () => {
 
     return (
         <div className="container mx-auto">
-            <div className="mt-8 mb-2 p-4 bg-beige-50 rounded-lg shadow-md">
-                <h2 className="text-xl font-semibold mb-3 text-center text-gold-dark">總進度</h2>
+            <div className="mt-8 mb-2 p-4 bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md">
+                <h2 className="text-xl font-semibold mb-3 text-center text-gold-dark dark:text-gold-light">總進度</h2>
                 <div className="mt-2 flex items-center gap-3">
-                    <div className="flex-grow bg-gold-light rounded-full h-4">
-                        <div className="bg-gold-dark h-4 rounded-full transition-all duration-500" style={{ width: `${totalProgressPercentage}%` }}></div>
+                    <div className="flex-grow bg-gold-light dark:bg-gray-700 rounded-full h-4">
+                        <div className="bg-gold-dark dark:bg-gold-DEFAULT h-4 rounded-full transition-all duration-500" style={{ width: `${totalProgressPercentage}%` }}></div>
                     </div>
-                    <p className="flex-shrink-0 text-md text-gray-600 tabular-nums font-semibold">
+                    <p className="flex-shrink-0 text-md text-gray-600 dark:text-gray-300 tabular-nums font-semibold">
                         {totalCompletedChapters} / {totalBibleChapters} ({Math.round(totalProgressPercentage)}%)
                     </p>
                 </div>

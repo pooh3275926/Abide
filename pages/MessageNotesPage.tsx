@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { MessageNote } from '../types';
@@ -90,14 +89,14 @@ const MessageNotesPage: React.FC = () => {
       <div className="flex justify-between items-center mt-6 mb-6 gap-4">
         {!isSelectMode ? (
           <>
-            <input type="text" placeholder="搜尋..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="flex-grow w-full p-2 rounded-lg border bg-white" />
-            <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-200 whitespace-nowrap text-sm">{sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}</button>
-            <button onClick={() => setIsSelectMode(true)} className="p-2 rounded-lg bg-beige-200 whitespace-nowrap text-sm">多選</button>
-            <button onClick={() => { setEditingNote(null); setIsFormOpen(true); }} className="px-6 py-2 bg-gold-DEFAULT text-black rounded-lg shadow-md hover:bg-gold-dark transition-colors whitespace-nowrap">新增</button>
+            <input type="text" placeholder="搜尋..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
+            <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">{sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}</button>
+            <button onClick={() => setIsSelectMode(true)} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">多選</button>
+            <button onClick={() => { setEditingNote(null); setIsFormOpen(true); }} className="px-6 py-2 bg-gold-DEFAULT text-black dark:text-white rounded-lg shadow-md hover:bg-gold-dark transition-colors whitespace-nowrap">新增</button>
           </>
         ) : (
-          <div className="w-full flex justify-between items-center p-2 bg-beige-200 rounded-lg">
-            <button onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }} className="px-3 py-2 text-sm rounded-lg bg-gray-300">取消</button>
+          <div className="w-full flex justify-between items-center p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
+            <button onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">取消</button>
             <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
             <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">刪除</button>
           </div>
@@ -113,8 +112,8 @@ const MessageNotesPage: React.FC = () => {
               onClick={() => setSelectedTag(tag)}
               className={`px-3 py-1 text-sm rounded-full transition-colors ${
                 selectedTag === tag
-                  ? 'bg-gold-dark text-white'
-                  : 'bg-beige-200 hover:bg-beige-300'
+                  ? 'bg-gold-dark text-white dark:bg-gold-light dark:text-black'
+                  : 'bg-beige-200 dark:bg-gray-700 hover:bg-beige-300 dark:hover:bg-gray-600'
               }`}
             >
               {tag === 'all' ? '全部' : tag}
@@ -128,7 +127,7 @@ const MessageNotesPage: React.FC = () => {
         {sortedNotes.length > 0 ? sortedNotes.map(note => {
           const isExpanded = expandedNoteId === note.id;
           return (
-            <div key={note.id} className={`bg-beige-50 rounded-lg shadow-sm overflow-hidden transition-all duration-300 relative ${selectedIds.has(note.id) ? 'ring-2 ring-gold-DEFAULT' : ''} ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={() => isSelectMode && handleToggleSelection(note.id)}>
+            <div key={note.id} className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 relative ${selectedIds.has(note.id) ? 'ring-2 ring-gold-DEFAULT' : ''} ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={() => isSelectMode && handleToggleSelection(note.id)}>
               {isSelectMode && <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <input type="checkbox" className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark" checked={selectedIds.has(note.id)} readOnly />
               </div>}
@@ -137,25 +136,25 @@ const MessageNotesPage: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-lg font-bold">{note.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">{note.speaker} • {note.date}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{note.speaker} • {note.date}</p>
                       {!isExpanded && <p className="mt-2 text-sm italic line-clamp-2">"{note.content}"</p>}
                     </div>
                     {!isSelectMode && (
                         <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                          <button onClick={(e) => { e.stopPropagation(); setEditingNote(note); setIsFormOpen(true); }} className="text-xl p-1 rounded-full hover:bg-blue-200" aria-label={`編輯筆記 ${note.title}`}>ᝰ</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([note.id])); }} className="text-xl p-1 rounded-full hover:bg-red-200" aria-label={`刪除筆記 ${note.title}`}>✘</button>
+                          <button onClick={(e) => { e.stopPropagation(); setEditingNote(note); setIsFormOpen(true); }} className="text-xl p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50" aria-label={`編輯筆記 ${note.title}`}>ᝰ</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([note.id])); }} className="text-xl p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50" aria-label={`刪除筆記 ${note.title}`}>✘</button>
                         </div>
                     )}
                   </div>
                 </div>
 
                 {isExpanded && (
-                  <div className="p-4 pt-0 border-t border-beige-200">
+                  <div className="p-4 pt-0 border-t border-beige-200 dark:border-gray-700">
                     <p className="whitespace-pre-wrap mt-4">{note.content}</p>
                     {note.tags.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {note.tags.map(tag => (
-                          <span key={tag} className="px-2 py-1 text-xs bg-gold-light rounded-full">{tag}</span>
+                          <span key={tag} className="px-2 py-1 text-xs bg-gold-light dark:bg-gold-dark rounded-full">{tag}</span>
                         ))}
                       </div>
                     )}
