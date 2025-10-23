@@ -1,5 +1,6 @@
 // pages/BiblePage.tsx
 import { useState, useEffect } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 
 type BibleVerse = {
   chineses: string;
@@ -105,86 +106,85 @@ export default function BiblePage() {
     }
   };
 
-const nextChapter = () => {
-  const idx = bibleBooksOrder.indexOf(book);
-  if (chap < chapters) {
-    setChap(chap + 1);
-  } else if (idx < bibleBooksOrder.length - 1) {
-    const nextBook = bibleBooksOrder[idx + 1];
-    setBook(nextBook);
-    setChap(1);
-  }
-  // 已經是最後一章，不動
-};
+  const nextChapter = () => {
+    const idx = bibleBooksOrder.indexOf(book);
+    if (chap < chapters) {
+      setChap(chap + 1);
+    } else if (idx < bibleBooksOrder.length - 1) {
+      const nextBook = bibleBooksOrder[idx + 1];
+      setBook(nextBook);
+      setChap(1);
+    }
+  };
 
-const prevChapter = () => {
-  const idx = bibleBooksOrder.indexOf(book);
-  if (chap > 1) {
-    setChap(chap - 1);
-  } else if (idx > 0) {
-    const prevBook = bibleBooksOrder[idx - 1];
-    setBook(prevBook);
-    setChap(maxChapters[prevBook]);
-  }
-  // 已經是第一章，不動
-};
+  const prevChapter = () => {
+    const idx = bibleBooksOrder.indexOf(book);
+    if (chap > 1) {
+      setChap(chap - 1);
+    } else if (idx > 0) {
+      const prevBook = bibleBooksOrder[idx - 1];
+      setBook(prevBook);
+      setChap(maxChapters[prevBook]);
+    }
+  };
 
+  const ChapterNavigation = () => (
+    <div className="flex items-center justify-center gap-2 flex-wrap sm:flex-nowrap mb-6">
+      {/* 左箭頭 */}
+      <button
+        onClick={prevChapter}
+        disabled={book === bibleBooksOrder[0] && chap === 1}
+        className="p-2 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronLeftIcon className="h-5 w-5" />
+      </button>
+
+      {/* 書卷下拉 */}
+      <select
+        value={book}
+        onChange={(e) => handleBookSelect(e.target.value)}
+        className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
+      >
+        {bibleBooksOrder.map((b) => (
+          <option key={b} value={b}>{b}</option>
+        ))}
+      </select>
+
+      {/* 章節下拉 */}
+      <select
+        value={chap}
+        onChange={(e) => setChap(Number(e.target.value))}
+        className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
+      >
+        {Array.from({ length: chapters }, (_, i) => i + 1).map((c) => (
+          <option key={c} value={c}>{c}</option>
+        ))}
+      </select>
+
+      {/* 右箭頭 */}
+      <button
+        onClick={nextChapter}
+        disabled={book === bibleBooksOrder[bibleBooksOrder.length - 1] && chap === maxChapters[bibleBooksOrder[bibleBooksOrder.length - 1]]}
+        className="p-2 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronRightIcon className="h-5 w-5" />
+      </button>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6">
-      <h1 className="mt-4 text-3 font-extrabold text-center mb-6 text-gold-600 dark:text-gold-400 drop-shadow-md">
+      <h1 className="mt-4 text-3xl font-extrabold text-center mb-6 text-gold-600 dark:text-gold-400 drop-shadow-md">
         每天讀經會幸福哦
       </h1>
 
-{/* 控制列 */}
-<div className="flex flex-col items-center justify-center gap-2 mb-6">
-  {/* 第一列：書卷選單 + 章節選單 */}
-  <div className="flex items-center justify-center gap-2 flex-wrap sm:flex-nowrap">
-    <select
-      value={book}
-      onChange={(e) => handleBookSelect(e.target.value)}
-      className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
-    >
-      {bibleBooksOrder.map((b) => (
-        <option key={b} value={b}>{b}</option>
-      ))}
-    </select>
-
-    <select
-      value={chap}
-      onChange={(e) => setChap(Number(e.target.value))}
-      className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
-    >
-      {Array.from({ length: chapters }, (_, i) => i + 1).map((c) => (
-        <option key={c} value={c}>{c}</option>
-      ))}
-    </select>
-  </div>
-
-  {/* 第二列：上一章 / 下一章按鈕 */}
-  <div className="flex items-center justify-center gap-4 mt-2">
-    <button
-      onClick={prevChapter}
-      disabled={book === bibleBooksOrder[0] && chap === 1}
-      className="px-6 py-2 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
-      上一章
-    </button>
-
-    <button
-      onClick={nextChapter}
-      disabled={book === bibleBooksOrder[bibleBooksOrder.length - 1] && chap === maxChapters[bibleBooksOrder[bibleBooksOrder.length - 1]]}
-      className="px-6 py-2 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
-      下一章
-    </button>
-  </div>
-</div>
-
+      {/* 上方控制列 */}
+      <ChapterNavigation />
 
       {loading && <p className="text-center text-gray-500">讀取中...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
+      {/* 經文區 */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 leading-relaxed space-y-3 overflow-x-auto">
         {verses.length > 0 ? (
           <>
@@ -204,11 +204,9 @@ const prevChapter = () => {
           !loading && !error && <p className="text-center text-gray-500">請選擇書卷與章節後點擊「查詢」。</p>
         )}
       </div>
+
+      {/* 下方控制列 */}
+      <ChapterNavigation />
     </div>
   );
 }
-
-
-
-
-

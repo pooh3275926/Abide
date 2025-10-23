@@ -107,7 +107,7 @@ const QuickReadPage: React.FC = () => {
 
     return (
         <div className="container mx-auto max-w-2xl">
-            <p className="mt-4 text-center text-gray-600 dark:text-gray-400 mb-6">
+            <p className="mt-8 text-center text-gray-600 dark:text-gray-400 mb-6">
                 選擇書卷章節，或指定節數範圍，<br />
                 讓 AI 協助您快速領受神的話語。
             </p>

@@ -134,10 +134,10 @@ const PrayerListPage: React.FC = () => {
 
     const filterPositions: Record<typeof filterStatus, string> = {
         all: '0%',
-        unanswered: '100%',
-        answered: '200%',
-        commented: '300%',
-        liked: '400%',
+        unanswered: '98%',
+        answered: '196%',
+        commented: '294%',
+        liked: '392%',
     };
 
     const filteredItems = useMemo(() => {
@@ -212,13 +212,13 @@ const PrayerListPage: React.FC = () => {
     };
 
     const FilterButton: React.FC<{ label: string; status: typeof filterStatus; current: typeof filterStatus; onClick: (status: typeof filterStatus) => void; }> = ({ label, status, current, onClick }) => (
-        <button onClick={() => onClick(status)} className={`relative z-10 w-1/5 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none ${current === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
+        <button onClick={() => onClick(status)} className={`relative z-10 w-1/5 py-1.5 text-[12px] sm:text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none ${current === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
     );
 
     return (
         <div>
             {/* Controls */}
-            <div className="flex justify-between items-center mb-6 gap-4">
+            <div className="flex justify-between items-center mt-6 mb-6 gap-4">
                 {!isSelectMode ? (
                     <>
                         <input type="text" placeholder="搜尋標題、對象或內容..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />

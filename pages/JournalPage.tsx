@@ -259,15 +259,15 @@ const JournalPage: React.FC = () => {
 
   const handleToggleExpand = (id: string) => setExpandedEntryId(prev => prev === id ? null : id);
 
-  const filterPositions: Record<FilterStatus, string> = { all: '0%', commented: '100%', liked: '200%', pendingMeditation: '300%' };
+  const filterPositions: Record<FilterStatus, string> = { all: '0%', commented: '97%', liked: '194%', pendingMeditation: '290%' };
   const FilterButton: React.FC<{ label: string; status: FilterStatus }> = ({ label, status }) => (
-    <button onClick={() => setFilterStatus(status)} className={`relative z-10 w-1/4 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none ${filterStatus === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
+    <button onClick={() => setFilterStatus(status)} className={`relative z-10 w-1/4 py-1.5 text-[12px] sm:text-base font-semibold rounded-full transition-colors duration-300 focus:outline-none ${filterStatus === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
   );
 
   return (
     <div>
       {/* 上方搜尋、排序、多選、新增 */}
-      <div className="flex justify-between items-center mb-6 gap-4">
+      <div className="flex justify-between items-center mt-6 mb-6 gap-4">
         {!isSelectMode ? (
           <>
             <input type="text" placeholder="搜尋..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
@@ -290,9 +290,9 @@ const JournalPage: React.FC = () => {
           <div className="relative w-full max-w-xl p-1 bg-beige-200 dark:bg-gray-700 rounded-full flex items-center">
             <span className="absolute top-1 bottom-1 left-1 w-1/4 bg-white dark:bg-gray-900 rounded-full shadow-md transition-transform duration-300 ease-in-out" style={{ transform: `translateX(${filterPositions[filterStatus]})` }} aria-hidden="true" />
             <FilterButton label="全部" status="all" />
-            <FilterButton label="已留言" status="commented" />
-            <FilterButton label="已按讚" status="liked" />
-            <FilterButton label="待靈修" status="pendingMeditation" />
+            <FilterButton label="留言" status="commented" />
+            <FilterButton label="按讚" status="liked" />
+            <FilterButton label="無亮光" status="pendingMeditation" />
           </div>
           <select value={selectedBookFilter} onChange={e => setSelectedBookFilter(e.target.value)} className="p-2 text-xs sm:text-sm rounded-full border bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT">
             <option value="all">所有書卷</option>

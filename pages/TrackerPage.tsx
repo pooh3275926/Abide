@@ -114,7 +114,7 @@ const TrackerPage: React.FC = () => {
 
     return (
         <div className="container mx-auto">
-            <div className="mb-8 p-4 bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md">
+            <div className="mt-8 mb-2 p-4 bg-beige-50 dark:bg-gray-800 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold mb-3 text-center text-gold-dark dark:text-gold-light">總進度</h2>
                 <div className="mt-2 flex items-center gap-3">
                     <div className="flex-grow bg-gold-light dark:bg-gray-700 rounded-full h-4">

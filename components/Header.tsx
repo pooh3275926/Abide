@@ -99,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         <h1 className="text-xl font-bold text-gold-dark">{title}</h1>
         <button
           onClick={handleScrollToTop}
-          className="p-2 w-10 h-10 flex items-center justify-center rounded-full bg-beige-300 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT"
+          className="p-2 w-10 h-10 flex items-center justify-center rounded-full bg-beige-300 focus:outline-none focus:ring-0 active:outline-none"
           aria-label="Scroll to top"
         >
           {'▲'}

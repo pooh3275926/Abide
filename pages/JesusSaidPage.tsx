@@ -181,7 +181,7 @@ const JesusSaidPage: React.FC = () => {
   return (
     <div className="container mx-auto max-w-2xl text-center p-4">
       {/* --- 恩典值 --- */}
-      <div className="bg-beige-200 dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+      <div className="bg-beige-200 dark:bg-gray-800 p-4 rounded-lg shadow-md mt-4 mb-6">
         <p className="text-2xl font-bold text-gold-dark dark:text-gold-light">💧 {gracePoints} 點恩典值</p>
         <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
           每完成一章靈修日記可獲得 1 點。

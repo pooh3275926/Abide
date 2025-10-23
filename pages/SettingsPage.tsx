@@ -125,7 +125,7 @@ const SettingsPage: React.FC = () => {
     <div className="p-4 max-w-xl mx-auto space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gold-dark dark:text-gold-light"></h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">管理您的應用程式資料</p>
+        <p className="text-gray-900 text-[16px] mt-6">管理您的應用程式資料</p>
       </div>
 
       <div className="space-y-6">
