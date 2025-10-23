@@ -1,8 +1,7 @@
-import './BiblePage.css';
 import { useState, useEffect } from 'react';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import './BiblePage.css'; // 下面會提供 CSS
+import styles from './BiblePage.module.css';
 
 type BibleVerse = {
   chineses: string;
@@ -18,8 +17,13 @@ type BibleResponse = {
   record: BibleVerse[];
 };
 
-const fullNameToShortName: Record<string, string> = { /* 同上 */ };
-const maxChapters: Record<string, number> = { /* 同上 */ };
+const fullNameToShortName: Record<string, string> = {
+  /* 同前面的 fullNameToShortName */
+};
+
+const maxChapters: Record<string, number> = {
+  /* 同前面的 maxChapters */
+};
 
 export default function BiblePage() {
   const [book, setBook] = useState('創世記');
@@ -30,7 +34,7 @@ export default function BiblePage() {
   const [chapters, setChapters] = useState(50);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
-  // 更新最大章節
+  // 更新章節最大值
   useEffect(() => {
     const maxChap = maxChapters[book] || 50;
     setChapters(maxChap);
@@ -71,6 +75,7 @@ export default function BiblePage() {
       setChap(chap - 1);
     }
   };
+
   const nextChap = () => {
     if (chap < chapters) {
       setDirection('right');
@@ -82,6 +87,7 @@ export default function BiblePage() {
     if (fullNameToShortName[value]) {
       setBook(value);
       setChap(1);
+      setDirection('right');
     }
   };
 
@@ -91,7 +97,7 @@ export default function BiblePage() {
         請查詢書卷與章節
       </h1>
 
-      {/* 書卷與章節選擇 */}
+      {/* 書卷選擇 */}
       <div className="flex items-center justify-center gap-2 mb-4 flex-wrap sm:flex-nowrap">
         <input
           list="books"
@@ -117,13 +123,21 @@ export default function BiblePage() {
         </select>
       </div>
 
-      {/* 章節切換 */}
+      {/* 左右箭頭 */}
       <div className="flex items-center justify-center gap-4 mb-6">
-        <button onClick={prevChap} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+        <button
+          onClick={prevChap}
+          className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+        >
           <FaArrowLeft />
         </button>
-        <h2 className="text-xl font-bold text-gold-700 dark:text-gold-300 drop-shadow">{book} 第 {chap} 章</h2>
-        <button onClick={nextChap} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+        <h2 className="text-xl font-bold text-gold-700 dark:text-gold-300 drop-shadow">
+          {book} 第 {chap} 章
+        </h2>
+        <button
+          onClick={nextChap}
+          className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+        >
           <FaArrowRight />
         </button>
       </div>
@@ -134,7 +148,7 @@ export default function BiblePage() {
       {/* 經文區動畫 */}
       <TransitionGroup className="bg-beige-50 dark:bg-gray-900 p-6 rounded-2xl shadow-lg overflow-x-auto">
         <CSSTransition key={`${book}-${chap}`} timeout={300} classNames={`slide-${direction}`}>
-          <div className="space-y-3 text-gray-800 dark:text-gray-200">
+          <div className={`${styles.verseList} space-y-3 text-gray-800 dark:text-gray-200`}>
             {verses.map(v => (
               <p key={v.sec} className="p-3 rounded-lg hover:bg-yellow-50 dark:hover:bg-gray-700 transition shadow-sm">
                 <span className="font-semibold mr-2 text-gold-600 dark:text-gold-400">{v.sec}</span>
