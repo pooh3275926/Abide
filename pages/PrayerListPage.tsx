@@ -16,12 +16,14 @@ const PrayerListPage: React.FC = () => {
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [filterStatus, setFilterStatus] = useState<'all' | 'unanswered' | 'answered' | 'commented' | 'liked'>('all');
+    const [expandedPrayerId, setExpandedPrayerId] = useState<string | null>(null);
     
     // State for comments
     const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
     const [newCommentText, setNewCommentText] = useState<Record<string, string>>({});
     const [editingComment, setEditingComment] = useState<{ prayerId: string; commentId: string; text: string } | null>(null);
     const [commentToDelete, setCommentToDelete] = useState<{ prayerId: string, commentId: string } | null>(null);
+    const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
 
     // Data migration for adding likes and comments to existing items
     useEffect(() => {
@@ -38,6 +40,29 @@ const PrayerListPage: React.FC = () => {
         }
     }, []); // Run only once
 
+    useEffect(() => {
+        if (!selectedCommentId) {
+          return;
+        }
+    
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (!target.closest('[data-comment-container]')) {
+                setSelectedCommentId(null);
+            }
+        };
+    
+        document.addEventListener('mousedown', handleClickOutside);
+        
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [selectedCommentId]);
+
+    const handleToggleExpand = (id: string) => {
+        setExpandedPrayerId(prevId => (prevId === id ? null : id));
+    };
+
     const handleToggleLike = (itemId: string) => {
         setItems(prevItems => prevItems.map(item => {
             if (item.id === itemId) {
@@ -49,8 +74,18 @@ const PrayerListPage: React.FC = () => {
         }));
     };
 
+    const handleCommentClick = (commentId: string) => {
+        setSelectedCommentId(prevId => prevId === commentId ? null : commentId);
+    };
+
     const handleToggleCommentSection = (itemId: string) => {
-        setExpandedCommentId(prevId => (prevId === itemId ? null : itemId));
+        setExpandedCommentId(prevId => {
+            const newId = prevId === itemId ? null : itemId;
+            if (newId !== prevId) { // Reset selected comment if section changes
+                setSelectedCommentId(null);
+            }
+            return newId;
+        });
     };
     
     const handleAddComment = (e: React.FormEvent, itemId: string) => {
@@ -193,7 +228,7 @@ const PrayerListPage: React.FC = () => {
                     </>
                 ) : (
                     <div className="w-full flex justify-between items-center p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
-                        <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">取消</button>
+                        <button onClick={() => { setIsSelectMode(false); setSelectedIds(new Set()); }} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">取消</button>
                         <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
                         <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">刪除</button>
                     </div>
@@ -217,76 +252,130 @@ const PrayerListPage: React.FC = () => {
             {/* Prayer List */}
             <div className="space-y-4">
                 {filteredItems.length === 0 ? <p className="text-center text-gray-500 dark:text-gray-400 py-8">{searchTerm ? '找不到禱告事項' : '沒有符合條件的禱告事項'}</p> : filteredItems.map(item => {
+                    const isExpanded = expandedPrayerId === item.id;
                     const isCommentSectionExpanded = expandedCommentId === item.id;
                     return (
-                        <div key={item.id} className={`rounded-lg shadow-sm overflow-hidden transition-all duration-300 ${item.answered ? 'bg-gold-light/60 dark:bg-gold-dark/40' : 'bg-beige-50 dark:bg-gray-800'} ${isSelectMode ? 'pl-10' : ''} ${selectedIds.has(item.id) ? 'ring-2 ring-gold-DEFAULT' : ''}`}>
-                            <div className={`cursor-pointer ${isSelectMode ? '' : 'pointer-events-none'}`} onClick={() => isSelectMode && handleToggleSelection(item.id)} role={isSelectMode ? 'button' : undefined} tabIndex={isSelectMode ? 0 : -1}>
-                                {isSelectMode && (<div className="absolute inset-y-0 left-0 flex items-center pl-3"><input type="checkbox" className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark pointer-events-none" checked={selectedIds.has(item.id)} readOnly tabIndex={-1} /></div>)}
-                                <div className="p-4 flex items-start pointer-events-auto">
+                        <div
+                            key={item.id}
+                            className={`rounded-lg shadow-sm overflow-hidden transition-all duration-300 relative ${item.answered ? 'bg-gold-light/60 dark:bg-gold-dark/40' : 'bg-beige-50 dark:bg-gray-800'} ${selectedIds.has(item.id) ? 'ring-2 ring-gold-DEFAULT' : ''} ${isSelectMode ? 'cursor-pointer' : ''}`}
+                            onClick={() => { if (isSelectMode) handleToggleSelection(item.id); }}
+                        >
+                            {isSelectMode && (
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <input type="checkbox" className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark" checked={selectedIds.has(item.id)} readOnly />
+                                </div>
+                            )}
+                            <div className={`${isSelectMode ? 'pl-10' : ''}`}>
+                                <div
+                                    className="p-4 flex items-start"
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                        if (isSelectMode) {
+                                            e.stopPropagation();
+                                            handleToggleSelection(item.id);
+                                        } else {
+                                            handleToggleExpand(item.id);
+                                        }
+                                    }}
+                                    onKeyDown={e => !isSelectMode && e.key === 'Enter' && handleToggleExpand(item.id)}
+                                    aria-expanded={isExpanded}
+                                >
                                     <div className="flex-grow">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <h3 className="text-lg font-bold">{item.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({item.person})</span></h3>
-                                                <p className="mt-2 text-sm whitespace-pre-wrap">{item.content}</p>
-                                                {item.godsResponse && (<div className="mt-3 pt-3 border-t border-beige-200/60 dark:border-gray-700/60"><p className="text-sm"><span className="font-semibold text-gold-dark dark:text-gold-light">神的回應：</span><span className="whitespace-pre-wrap">{item.godsResponse}</span></p></div>)}
+                                                {!isExpanded && (
+                                                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{item.content.substring(0, 100)}{item.content.length > 100 ? '...' : ''}</p>
+                                                )}
                                             </div>
-                                            <div className="flex flex-col items-end space-y-2 ml-2 flex-shrink-0">
-                                                {item.answered ? <span title={`應允於 ${item.answeredDate}`} className="text-xl text-gold-dark dark:text-gold-light">✞ 神已應允</span> : <span title="禱告中" className="text-xl text-gold-DEFAULT">🪶 願神垂聽</span>}
-                                                {!isSelectMode && (<div className="flex gap-2"><button onClick={(e) => { e.stopPropagation(); setEditingItem(item); setIsFormOpen(true); }} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">ᝰ 編輯</button><button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([item.id])); }} className="text-xs px-2 py-1 bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-200 rounded">✘ 刪除</button></div>)}
+                                            <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                                                {!isSelectMode && (
+                                                    <>
+                                                        <button onClick={(e) => { e.stopPropagation(); setEditingItem(item); setIsFormOpen(true); }} className="text-xl p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50" aria-label={`編輯禱告 ${item.title}`}>ᝰ</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([item.id])); }} className="text-xl p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50" aria-label={`刪除禱告 ${item.title}`}>✘</button>
+                                                    </>
+                                                )}
+                                                <span className={`transform transition-transform duration-200 ${isExpanded ? '' : ''}`}></span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            {/* Action Bar */}
-                            {!isSelectMode && (
-                                <div className="px-4 py-2 border-t border-b border-beige-200 dark:border-gray-700 flex items-center gap-6">
-                                    <button onClick={(e) => { e.stopPropagation(); handleToggleLike(item.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-all duration-200 ${item.liked ? 'text-red-500' : 'text-gray-400'}`} fill={item.liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
-                                        <span className="text-sm font-medium">{item.likes}</span>
-                                    </button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleToggleCommentSection(item.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gold-dark dark:hover:text-gold-light transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-colors duration-200 ${item.comments?.length > 0 ? 'text-gold-dark dark:text-gold-light' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                        <span className="text-sm font-medium">{item.comments?.length || 0}</span>
-                                    </button>
-                                </div>
-                            )}
-
-                             {/* Comment Section */}
-                            {!isSelectMode && (
-                                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCommentSectionExpanded ? 'max-h-[500px]' : 'max-h-0'}`}>
-                                    <div className="p-4 space-y-4 bg-beige-100/50 dark:bg-gray-900/50">
-                                        {item.comments?.length > 0 ? item.comments.map(comment => (
-                                            <div key={comment.id} className="text-sm">
-                                                {editingComment?.commentId === comment.id ? (
-                                                    <div>
-                                                        <textarea value={editingComment.text} onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })} className="w-full p-2 text-sm rounded border bg-white dark:bg-gray-700" rows={2}/>
-                                                        <div className="flex gap-2 mt-1">
-                                                            <button onClick={handleUpdateComment} className="text-xs px-2 py-1 bg-green-200 dark:bg-green-800 rounded">儲存</button>
-                                                            <button onClick={() => setEditingComment(null)} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">取消</button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-between items-start">
-                                                        <p className="whitespace-pre-wrap flex-grow pr-2">{comment.text}</p>
-                                                        <div className="flex-shrink-0 flex items-center gap-3">
-                                                            <button onClick={() => setEditingComment({ prayerId: item.id, commentId: comment.id, text: comment.text })} className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">ᝰ 編輯</button>
-                                                            <button onClick={() => setCommentToDelete({ prayerId: item.id, commentId: comment.id })} className="text-xs text-red-500 hover:text-red-700">✘ 刪除</button>
-                                                        </div>
-                                                    </div>
-                                                )}
+                            
+                                {isExpanded && (
+                                    <div className="px-4 pb-4 pt-0">
+                                        <div className="border-t border-gray-200 dark:border-gray-700 text-sm space-y-2 pt-4">
+                                            <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                                            {item.godsResponse && (
+                                                <div className="mt-3 pt-3 border-t border-beige-200/60 dark:border-gray-700/60">
+                                                    <p className="text-sm">
+                                                        <span className="block mb-4 font-semibold text-gold-dark dark:text-gold-light">神的回應：</span>
+                                                        <span className="whitespace-pre-wrap">{item.godsResponse}</span>
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between items-center mt-2">
+                                                {item.answered
+                                                    ? <span title={`應允於 ${item.answeredDate}`} className="block mt-4 text-sm font-semibold text-gold-dark dark:text-gold-light">✞ 神已應允</span>
+                                                    : <span title="禱告中" className="block mt-4 text-sm font-semibold text-gray-500 dark:text-gray-400">✞ 願神垂聽</span>
+                                                }
                                             </div>
-                                        )) : <p className="text-xs text-center text-gray-500">還沒有留言</p>}
-                                        <form onSubmit={(e) => handleAddComment(e, item.id)} className="flex gap-2 items-center">
-                                            <input type="text" placeholder="新增留言..." value={newCommentText[item.id] || ''} onChange={(e) => setNewCommentText(prev => ({ ...prev, [item.id]: e.target.value }))} className="w-full flex-grow p-2 text-sm rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
-                                            <button type="submit" className="px-3 py-2 text-sm bg-gold-DEFAULT text-black dark:text-white rounded-lg">➤</button>
-                                        </form>
+                                        </div>
                                     </div>
+                                )}
+
+                                {/* Action Bar */}
+                                {!isSelectMode && (
+                                    <div className="px-4 py-2 border-t border-b border-beige-200 dark:border-gray-700 flex items-center gap-6">
+                                        <button onClick={(e) => { e.stopPropagation(); handleToggleLike(item.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-all duration-200 ${item.liked ? 'text-red-500' : 'text-gray-400'}`} fill={item.liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
+                                            <span className="text-sm font-medium">{item.likes}</span>
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleToggleCommentSection(item.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gold-dark dark:hover:text-gold-light transition-colors duration-200">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-colors duration-200 ${item.comments?.length > 0 ? 'text-gold-dark dark:text-gold-light' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                            <span className="text-sm font-medium">{item.comments?.length || 0}</span>
+                                        </button>
+                                    </div>
+                                )}
+
+                                 {/* Comment Section */}
+                                {!isSelectMode && (
+                                    <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCommentSectionExpanded ? 'max-h-[500px]' : 'max-h-0'}`}>
+                                        <div className="p-4 space-y-4 bg-beige-100/50 dark:bg-gray-900/50">
+                                            {item.comments?.length > 0 ? item.comments.map(comment => (
+                                                <div key={comment.id} className="text-sm" data-comment-container>
+                                                    {editingComment?.commentId === comment.id ? (
+                                                        <div>
+                                                            <textarea value={editingComment.text} onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })} className="w-full p-2 text-sm rounded border bg-white dark:bg-gray-700" rows={2}/>
+                                                            <div className="flex gap-2 mt-1">
+                                                                <button onClick={handleUpdateComment} className="text-xs px-2 py-1 bg-green-200 dark:bg-green-800 rounded">儲存</button>
+                                                                <button onClick={() => setEditingComment(null)} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">取消</button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-between items-start cursor-pointer" onClick={() => handleCommentClick(comment.id)}>
+                                                            <p className="whitespace-pre-wrap flex-grow pr-2">{comment.text}</p>
+                                                            {selectedCommentId === comment.id && (
+                                                                <div className="flex-shrink-0 flex items-center gap-3">
+                                                                    <button onClick={(e) => { e.stopPropagation(); setEditingComment({ prayerId: item.id, commentId: comment.id, text: comment.text }); }} className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">ᝰ 編輯</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setCommentToDelete({ prayerId: item.id, commentId: comment.id }); }} className="text-xs text-red-500 hover:text-red-700">✘ 刪除</button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )) : <p className="text-xs text-center text-gray-500">還沒有留言</p>}
+                                            <form onSubmit={(e) => handleAddComment(e, item.id)} className="flex gap-2 items-center">
+                                                <input type="text" placeholder="新增留言..." value={newCommentText[item.id] || ''} onChange={(e) => setNewCommentText(prev => ({ ...prev, [item.id]: e.target.value }))} className="w-full flex-grow p-2 text-sm rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
+                                                <button type="submit" className="px-3 py-2 text-sm bg-gold-DEFAULT text-black dark:text-white rounded-lg">➤</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="text-xs text-gray-500 dark:text-gray-400 py-3 px-4 border-t border-beige-200 dark:border-gray-700 flex justify-between">
+                                    <span>禱告日: {item.prayerDate}</span>
+                                    <span>已過天數: {calculateDaysPassed(item.prayerDate)} 天</span>
                                 </div>
-                            )}
-                             <div className="text-xs text-gray-500 dark:text-gray-400 py-3 px-4 border-t border-beige-200 dark:border-gray-700 flex justify-between">
-                                <span>禱告日: {item.prayerDate}</span>
-                                <span>已過天數: {calculateDaysPassed(item.prayerDate)} 天</span>
                             </div>
                         </div>
                     )
