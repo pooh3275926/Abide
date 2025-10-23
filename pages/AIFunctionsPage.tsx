@@ -1,21 +1,22 @@
 import React from 'react';
 import type { Page } from '../App';
 
-interface MorePageProps {
+interface AIFunctionsPageProps {
   setActivePage: (page: Page) => void;
 }
 
-const MorePage: React.FC<MorePageProps> = ({ setActivePage }) => {
-  const moreItems: { page: Page; label: string; icon: string; description: string }[] = [
-    { page: 'tracker', label: '聖經進度', icon: '📜', description: '追蹤您的讀經旅程' },
-    { page: 'settings', label: '設定', icon: '⚙️', description: '匯入與匯出您的資料' },
+const AIFunctionsPage: React.FC<AIFunctionsPageProps> = ({ setActivePage }) => {
+  const aiItems: { page: Page; label: string; icon: string; description: string }[] = [
+    { page: 'iNeedYou', label: '我需要祢', icon: '🌱', description: '為您的處境生成個人化禱告' },
+    { page: 'quickRead', label: '快速讀經', icon: '⚡️', description: 'AI 協助您快速領受神的話語' },
+    { page: 'jesusSaid', label: '耶穌說', icon: '💌', description: '每日領受鼓勵與盼望' },
   ];
 
   return (
     <div className="max-w-md mx-auto mt-8">
       <div className="bg-beige-50 dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         <ul className="divide-y divide-beige-200 dark:divide-gray-700">
-          {moreItems.map((item) => (
+          {aiItems.map((item) => (
             <li key={item.page}>
               <button
                 onClick={() => setActivePage(item.page)}
@@ -43,4 +44,4 @@ const MorePage: React.FC<MorePageProps> = ({ setActivePage }) => {
   );
 };
 
-export default MorePage;
+export default AIFunctionsPage;

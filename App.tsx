@@ -7,6 +7,8 @@ import JesusSaidPage from './pages/JesusSaidPage';
 import QuickReadPage from './pages/QuickReadPage';
 import SettingsPage from './pages/SettingsPage';
 import MorePage from './pages/MorePage'; // 新增更多頁面
+import BiblePage from './pages/BiblePage';
+import AIFunctionsPage from './pages/AIFunctionsPage';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -19,7 +21,9 @@ export type Page =
   | 'jesusSaid'
   | 'quickRead'
   | 'settings'
-  | 'more'; // 新增 more
+  | 'more' // 新增 more
+  | 'bible'
+  | 'ai';
 
 const pageTitles: Record<Page, string> = {
   iNeedYou: '我需要祢',
@@ -30,10 +34,12 @@ const pageTitles: Record<Page, string> = {
   quickRead: '快速讀經',
   settings: '設定',
   more: '更多',
+  bible: '聖經',
+  ai: 'AI 功能',
 };
 
 const App: React.FC = () => {
-  const [activePage, setActivePage] = useState<Page>('iNeedYou');
+  const [activePage, setActivePage] = useState<Page>('bible');
   const [isDarkMode, setIsDarkMode] = useLocalStorage('darkMode', false);
 
   useEffect(() => {
@@ -62,9 +68,13 @@ const App: React.FC = () => {
       case 'settings':
         return <SettingsPage />;
       case 'more':
-        return <MorePage setActivePage={setActivePage} />; // MorePage 可以跳轉其他頁面
+        return <MorePage setActivePage={setActivePage} />;
+      case 'bible':
+        return <BiblePage />;
+      case 'ai':
+        return <AIFunctionsPage setActivePage={setActivePage} />;
       default:
-        return <INeedYouPage />;
+        return <BiblePage />;
     }
   };
 

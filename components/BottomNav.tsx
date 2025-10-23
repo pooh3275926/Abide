@@ -26,12 +26,23 @@ const NavItem: React.FC<{
 const BottomNav: React.FC<BottomNavProps> = ({ activePage, setActivePage }) => {
   // 更新後的底部導覽列項目
   const navItems: { page: Page; label: string; icon: string }[] = [
+    { page: 'bible', label: '聖經', icon: '📖' },
     { page: 'journal', label: '靈修日記', icon: '📝' },
     { page: 'prayer', label: '禱告清單', icon: '🤲🏻' },
-    { page: 'iNeedYou', label: '我需要祢', icon: '🌱' },
-    { page: 'quickRead', label: '快速讀經', icon: '⚡️' },
+    { page: 'ai', label: 'AI 功能', icon: '✦︎' },
     { page: 'more', label: '更多功能', icon: '⋯' },
   ];
+
+  const getActiveTab = (page: Page): Page => {
+    const aiPages: Page[] = ['iNeedYou', 'quickRead', 'jesusSaid'];
+    const morePages: Page[] = ['tracker', 'settings'];
+
+    if (aiPages.includes(page)) return 'ai';
+    if (morePages.includes(page)) return 'more';
+    return page;
+  };
+
+  const currentActiveTab = getActiveTab(activePage);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-beige-200/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-[0_-2px_5px_-1px_rgba(0,0,0,0.1)] flex justify-around items-center">
@@ -40,7 +51,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activePage, setActivePage }) => {
           key={item.page}
           label={item.label}
           icon={item.icon}
-          isActive={activePage === item.page}
+          isActive={currentActiveTab === item.page}
           onClick={() => setActivePage(item.page)}
         />
       ))}
