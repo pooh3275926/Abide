@@ -35,7 +35,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activePage, setActivePage }) => {
 
   const getActiveTab = (page: Page): Page => {
     const aiPages: Page[] = ['iNeedYou', 'quickRead', 'jesusSaid'];
-    const morePages: Page[] = ['tracker', 'settings'];
+    const morePages: Page[] = ['tracker', 'settings', 'messageNotes'];
 
     if (aiPages.includes(page)) return 'ai';
     if (morePages.includes(page)) return 'more';

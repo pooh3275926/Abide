@@ -9,6 +9,7 @@ import SettingsPage from './pages/SettingsPage';
 import MorePage from './pages/MorePage'; // 新增更多頁面
 import BiblePage from './pages/BiblePage';
 import AIFunctionsPage from './pages/AIFunctionsPage';
+import MessageNotesPage from './pages/MessageNotesPage'; // Import the new page
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -23,7 +24,8 @@ export type Page =
   | 'settings'
   | 'more' // 新增 more
   | 'bible'
-  | 'ai';
+  | 'ai'
+  | 'messageNotes'; // Add message notes page type
 
 const pageTitles: Record<Page, string> = {
   iNeedYou: '我需要祢',
@@ -36,6 +38,7 @@ const pageTitles: Record<Page, string> = {
   more: '更多',
   bible: '聖經',
   ai: 'AI 功能',
+  messageNotes: '信息筆記', // Add title for message notes page
 };
 
 const App: React.FC = () => {
@@ -73,6 +76,8 @@ const App: React.FC = () => {
         return <BiblePage />;
       case 'ai':
         return <AIFunctionsPage setActivePage={setActivePage} />;
+      case 'messageNotes': // Add rendering case for message notes page
+        return <MessageNotesPage />;
       default:
         return <BiblePage />;
     }

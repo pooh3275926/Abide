@@ -64,3 +64,12 @@ export interface QuickReadEntry {
   application: string;
   prayer: string;
 }
+
+export interface MessageNote {
+  id: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  speaker: string;
+  content: string;
+  tags: string[];
+}

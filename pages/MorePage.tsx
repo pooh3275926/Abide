@@ -8,6 +8,7 @@ interface MorePageProps {
 const MorePage: React.FC<MorePageProps> = ({ setActivePage }) => {
   const moreItems: { page: Page; label: string; icon: string; description: string }[] = [
     { page: 'tracker', label: '聖經進度', icon: '📜', description: '追蹤您的讀經旅程' },
+    { page: 'messageNotes', label: '信息筆記', icon: '✍️', description: '記錄講道、學習與心得' },
     { page: 'settings', label: '設定', icon: '⚙️', description: '匯入與匯出您的資料' },
   ];
 
