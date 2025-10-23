@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { SmallGroupShare } from '../types';
+import type { SmallGroupShare } from '../types';
 import SmallGroupShareForm from '../components/SmallGroupShareForm';
 import ConfirmationModal from './ConfirmationModal';
 
-const SmallGroupSharePage: React.FC = () => {
+const SmallGroupSharePage = () => {
   const [shares, setShares] = useLocalStorage<SmallGroupShare[]>('smallGroupShares', []);
   const [editingShare, setEditingShare] = useState<SmallGroupShare | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -70,7 +71,7 @@ const SmallGroupSharePage: React.FC = () => {
     });
   };
 
-  // 🔹 新增：從 API 取得 AI 生成的討論題目
+  // 🔹 從 API 取得 AI 生成討論題目
   const generateTopics = async (scripture: string): Promise<string[]> => {
     try {
       const res = await fetch('/api/aiHandler', {
@@ -148,7 +149,6 @@ const SmallGroupSharePage: React.FC = () => {
                     <div className="mt-4">
                         <h4 className="mb-2 font-semibold text-gold-dark">討論題目</h4>
                         <p className="whitespace-pre-wrap mt-1 text-sm">{share.topic}</p>
-                        {/* 🔹 AI 生成按鈕 */}
                         {!isSelectMode && (
                           <button
                             type="button"
