@@ -91,44 +91,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // 6️⃣ 福音卡片（避開重複經文版本）
       case 'jesusSaidCard': {
-        const exclude = payload?.excludeVerses || []; // 🟢 新增：接收前端傳來的已收藏經文列表
+  const exclude = payload?.excludeVerses || [];
 
-        const prompt = `
-生成一張福音卡片（繁體中文），請回傳有效 JSON：
+  const prompt = `
+你是一位熟悉聖經的屬靈輔導者，請生成一張福音卡片（繁體中文），格式如下：
 {
-  "verse": "經文（書卷章節）",
-  "message": "耶穌今日對你說的話",
-  "prayer": "對應禱告"
+  "verse": "經文內容（含章節）",
+  "message": "耶穌今日對你說的話（根據經文解釋與應用）",
+  "prayer": "回應禱告（以溫柔、真誠的語氣寫）"
 }
-注意：
-1. verse 欄位請包含完整經文與章節，例如 "詩篇121:7"。
-2. message 與 prayer 必須根據該經文內容撰寫。
-3. 請勿重複以下經文：${exclude.length > 0 ? exclude.join('、') : '（目前無已抽過經文）'}。
-4. 請確保輸出內容為乾淨 JSON，不要多餘文字、說明或換行。
+
+規則：
+1️⃣ verse 必須包含「經文原文」＋「章節」，例如：
+   "verse": "若有人在基督裡，他就是新造的人，舊事已過，都變成新的了。（哥林多後書 5:17）"
+2️⃣ message 應該根據經文意思延伸，例如鼓勵、安慰或盼望。
+3️⃣ prayer 應該自然回應這節經文。
+4️⃣ 若使用者傳入 excludeVerses，請避免重複其中的經文：${exclude.join('、') || '無'}。
+5️⃣ 請只回傳有效 JSON，不要加任何文字、說明或換行。
 `;
 
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        });
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+  });
 
-        const parsedResult = tryParseJSON(response.text, {});
-        result = {
-          verse: parsedResult.verse || '今日經文暫無',
-          message: parsedResult.message || '耶穌對你說暫無內容',
-          prayer: parsedResult.prayer || '回應禱告暫無'
-        };
-        break;
-      }
-
-      default:
-        return res.status(400).json({ error: 'Unknown action' });
-    }
-
-    return res.status(200).json({ result });
-
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ error: err.message || 'AI 生成失敗' });
-  }
+  const parsedResult = tryParseJSON(response.text, {});
+  result = {
+    verse: parsedResult.verse || '今日經文暫無',
+    message: parsedResult.message || '耶穌對你說暫無內容',
+    prayer: parsedResult.prayer || '回應禱告暫無'
+  };
+  break;
 }
