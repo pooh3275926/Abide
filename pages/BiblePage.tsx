@@ -1,5 +1,7 @@
 // pages/BiblePage.tsx
 import { useState, useEffect } from 'react';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import './BiblePage.css';
 
 type BibleVerse = {
   chineses: string;
@@ -57,14 +59,15 @@ export default function BiblePage() {
   const [error, setError] = useState('');
   const [chapters, setChapters] = useState(50);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
-  const [slide, setSlide] = useState(false);
 
+  // 更新最大章節
   useEffect(() => {
     const maxChap = maxChapters[book] || 50;
     setChapters(maxChap);
     if (chap > maxChap) setChap(1);
   }, [book]);
 
+  // 讀取經文
   useEffect(() => {
     const fetchBible = async () => {
       setLoading(true);
@@ -72,22 +75,19 @@ export default function BiblePage() {
       setVerses([]);
       try {
         const shortName = fullNameToShortName[book];
-        if (!shortName) throw new Error('書卷名稱錯誤或不支援。');
+        console.log('抓取經文:', book, chap, shortName); // debug
+        if (!shortName) throw new Error('書卷名稱錯誤或不支援');
 
-        const fileName = `${shortName}.json`;
-        const res = await fetch(`/bible/${fileName}`);
+        const res = await fetch(`/bible/${shortName}.json`);
         if (!res.ok) throw new Error('檔案不存在');
 
         const data: BibleResponse = await res.json();
         const chapterVerses = data.record.filter(v => v.chap === chap);
-        if (!chapterVerses.length) setError('找不到該章經文。');
+        if (chapterVerses.length === 0) setError('找不到該章經文');
         else setVerses(chapterVerses);
-
-        setSlide(true);
-        setTimeout(() => setSlide(false), 300);
       } catch (err) {
         console.error(err);
-        setError('讀取本地聖經資料失敗。');
+        setError('讀取本地聖經資料失敗');
       } finally {
         setLoading(false);
       }
@@ -120,73 +120,67 @@ export default function BiblePage() {
         請查詢書卷與章節
       </h1>
 
-      {/* 選擇列 */}
-      <div className="flex items-center justify-center gap-2 mb-6 flex-wrap sm:flex-nowrap">
-        <div className="flex-1 flex max-w-full sm:max-w-lg shadow-md rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          <input
-            list="books"
-            value={book}
-            onChange={(e) => handleBookSelect(e.target.value)}
-            className="flex-1 p-2 border-none outline-none dark:bg-gray-800 dark:text-gray-200"
-            placeholder="書卷"
-          />
-          <datalist id="books">
-            {Object.keys(fullNameToShortName).map(b => <option key={b} value={b} />)}
-          </datalist>
+      {/* 書卷選擇 */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+        <select
+          value={book}
+          onChange={(e) => handleBookSelect(e.target.value)}
+          className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 shadow-sm"
+        >
+          {Object.keys(fullNameToShortName).map(b => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
 
-          <select
-            value={chap}
-            onChange={(e) => setChap(Number(e.target.value))}
-            className="w-20 p-2 border-l border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-          >
-            {Array.from({ length: chapters }, (_, i) => i + 1).map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+        <select
+          value={chap}
+          onChange={(e) => {
+            const newChap = Number(e.target.value);
+            setDirection(newChap > chap ? 'right' : 'left');
+            setChap(newChap);
+          }}
+          className="w-20 p-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 shadow-sm"
+        >
+          {Array.from({ length: chapters }, (_, i) => i + 1).map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
 
-          <button
-            onClick={() => setChap(chap)}
-            className="px-4 py-2 bg-gold-600 dark:bg-gold-500 text-white hover:bg-gold-500 dark:hover:bg-gold-400 transition font-semibold"
-          >
-            查詢
-          </button>
-        </div>
+        <button
+          onClick={() => setChap(chap)}
+          className="px-4 py-2 bg-gold-600 dark:bg-gold-500 text-white hover:bg-gold-500 dark:hover:bg-gold-400 transition font-semibold"
+        >
+          查詢
+        </button>
       </div>
 
+      {/* 章節切換 */}
       <div className="flex items-center justify-center gap-4 mb-6">
-        <button onClick={prevChap} className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-          上一章
+        <button onClick={prevChap} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+          ◀
         </button>
         <h2 className="text-xl font-bold text-gold-700 dark:text-gold-300 drop-shadow">{book} 第 {chap} 章</h2>
-        <button onClick={nextChap} className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-          下一章
+        <button onClick={nextChap} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+          ▶
         </button>
       </div>
 
       {loading && <p className="text-center text-gray-500">讀取中...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
-      <div
-        className={`bg-beige-50 dark:bg-gray-900 p-4 sm:p-6 rounded-xl shadow-lg leading-relaxed overflow-x-auto transition-transform duration-300 ${
-          slide ? (direction === 'right' ? 'translate-x-full' : '-translate-x-full') : 'translate-x-0'
-        }`}
-      >
-        {verses.length > 0 ? (
-          <>
-            <h3 className="text-center font-bold mb-4 text-xl text-gold-700 dark:text-gold-300 drop-shadow">
-              {verses[0].chineses} 第 {verses[0].chap} 章
-            </h3>
-            <div className="space-y-2 text-gray-800 dark:text-gray-200">
-              {verses.map(v => (
-                <p key={v.sec} className="p-2 hover:bg-yellow-50 dark:hover:bg-gray-700 rounded transition">
-                  <span className="font-semibold mr-2 text-gold-600 dark:text-gold-400">{v.sec}</span>
-                  {v.bible_text}
-                </p>
-              ))}
-            </div>
-          </>
-        ) : (
-          !loading && !error && <p className="text-center text-gray-500">請選擇書卷與章節後點擊「查詢」。</p>
-        )}
-      </div>
+      {/* 經文區動畫 */}
+      <TransitionGroup className="bg-beige-50 dark:bg-gray-900 p-6 rounded-2xl shadow-lg overflow-x-auto">
+        <CSSTransition key={`${book}-${chap}`} timeout={300} classNames={`slide-${direction}`}>
+          <div className="space-y-3 text-gray-800 dark:text-gray-200">
+            {verses.map(v => (
+              <p key={v.sec} className="p-3 rounded-lg hover:bg-yellow-50 dark:hover:bg-gray-700 transition shadow-sm">
+                <span className="font-semibold mr-2 text-gold-600 dark:text-gold-400">{v.sec}</span>
+                {v.bible_text}
+              </p>
+            ))}
+          </div>
+        </CSSTransition>
+      </TransitionGroup>
     </div>
   );
 }
