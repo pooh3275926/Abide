@@ -99,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   "prayer": "對應禱告"
 }
 注意：
-1. verse 欄位請包含完整經文與章節，例如 "神愛世人（約翰福音3:16）"。
+1. verse 欄位請包含完整經文與章節，例如 "經文（書卷章節）"。
 2. message 與 prayer 請對應經文內容。
 3. 請只回傳完整 JSON，不要額外文字，也不要換行或注釋。
 `;
@@ -129,6 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: err.message || 'AI 生成失敗' });
   }
 }
+
 
 
 
