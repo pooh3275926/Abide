@@ -78,7 +78,7 @@ export default function BiblePage() {
           return;
         }
 
-        const fileName = `${book}.json`; // 整本書 JSON
+        const fileName = `${shortName}.json`;
         const res = await fetch(`/bible/${fileName}`);
         if (!res.ok) throw new Error('檔案不存在');
 
@@ -175,3 +175,4 @@ export default function BiblePage() {
     </div>
   );
 }
+
