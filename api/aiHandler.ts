@@ -16,7 +16,7 @@ function tryParseJSON(text: string, defaultValue: any = {}) {
   try {
     return JSON.parse(text);
   } catch {
-    const match = text.match(/\{[\s\S]*\}/);
+    const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
     if (match) {
       try {
         return JSON.parse(match[0]);
@@ -91,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // 6️⃣ 福音卡片（避開重複經文版本）
       case 'jesusSaidCard': {
-        const exclude = payload?.excludeVerses || []; // 🟢 新增：接收前端傳來的已收藏經文列表
+        const exclude = payload?.excludeVerses || [];
 
         const prompt = `
 生成一張福音卡片（繁體中文），請回傳有效 JSON：
@@ -121,6 +121,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
+      // 7️⃣ 小組討論題目生成
+      case 'smallGroupTopics': {
+        const scripture = payload?.scripture || '';
+        if (!scripture) {
+          return res.status(400).json({ error: '請提供 scripture 參數' });
+        }
+
+        const prompt = `
+你是一位小組長的得力助手。請根據以下經文章節，提供 3 個有意義、有深度，但是簡潔扼要、言簡意賅，且明確且能引發思考的小組討論問題（使用繁體中文）。
+請確保問題是開放式的，能鼓勵成員分享個人經歷和見解。
+經文章節：「${scripture}」
+請以 JSON 陣列格式回傳，陣列中只包含問題字串。例如：["問題一？", "問題二？", "問題三？"]
+`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+
+        const topics = tryParseJSON(response.text, []);
+        result = Array.isArray(topics) ? topics : [];
+        break;
+      }
+
       default:
         return res.status(400).json({ error: 'Unknown action' });
     }
@@ -132,4 +156,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: err.message || 'AI 生成失敗' });
   }
 }
-
