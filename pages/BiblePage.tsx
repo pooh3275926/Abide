@@ -16,20 +16,20 @@ type BibleResponse = {
 };
 
 const fullNameToShortName: Record<string, string> = {
-  '創世記': '創', '出埃及記': '出', '利未記': '利', '民數記': '民', '申命記': '申',
-  '約書亞記': '書', '士師記': '士', '路得記': '得', '撒母耳記上': '撒上', '撒母耳記下': '撒下',
-  '列王紀上': '王上', '列王紀下': '王下', '歷代志上': '代上', '歷代志下': '代下',
-  '以斯拉記': '拉', '尼希米記': '尼', '以斯帖記': '斯', '約伯記': '伯', '詩篇': '詩',
-  '箴言': '箴', '傳道書': '傳', '雅歌': '歌', '以賽亞書': '賽', '耶利米書': '耶',
-  '耶利米哀歌': '哀', '以西結書': '結', '但以理書': '但', '何西阿書': '何', '約珥書': '珥',
-  '阿摩司書': '摩', '俄巴底亞書': '俄', '約拿書': '拿', '彌迦書': '彌', '那鴻書': '鴻',
-  '哈巴谷書': '哈', '西番雅書': '番', '哈該書': '該', '撒迦利亞書': '亞', '瑪拉基書': '瑪',
-  '馬太福音': '太', '馬可福音': '可', '路加福音': '路', '約翰福音': '約', '使徒行傳': '徒',
-  '羅馬書': '羅', '哥林多前書': '林前', '哥林多後書': '林後', '加拉太書': '加', '以弗所書': '弗',
-  '腓立比書': '腓', '歌羅西書': '西', '帖撒羅尼迦前書': '帖前', '帖撒羅尼迦後書': '帖後',
-  '提摩太前書': '提前', '提摩太後書': '提後', '提多書': '多', '腓利門書': '門', '希伯來書': '來',
-  '雅各書': '雅', '彼得前書': '彼前', '彼得後書': '彼後', '約翰一書': '約一', '約翰二書': '約二',
-  '約翰三書': '約三', '猶大書': '猶', '啟示錄': '啟',
+  '創世記':'創','出埃及記':'出','利未記':'利','民數記':'民','申命記':'申',
+  '約書亞記':'書','士師記':'士','路得記':'得','撒母耳記上':'撒上','撒母耳記下':'撒下',
+  '列王紀上':'王上','列王紀下':'王下','歷代志上':'代上','歷代志下':'代下',
+  '以斯拉記':'拉','尼希米記':'尼','以斯帖記':'斯','約伯記':'伯','詩篇':'詩',
+  '箴言':'箴','傳道書':'傳','雅歌':'歌','以賽亞書':'賽','耶利米書':'耶',
+  '耶利米哀歌':'哀','以西結書':'結','但以理書':'但','何西阿書':'何','約珥書':'珥',
+  '阿摩司書':'摩','俄巴底亞書':'俄','約拿書':'拿','彌迦書':'彌','那鴻書':'鴻',
+  '哈巴谷書':'哈','西番雅書':'番','哈該書':'該','撒迦利亞書':'亞','瑪拉基書':'瑪',
+  '馬太福音':'太','馬可福音':'可','路加福音':'路','約翰福音':'約','使徒行傳':'徒',
+  '羅馬書':'羅','哥林多前書':'林前','哥林多後書':'林後','加拉太書':'加','以弗所書':'弗',
+  '腓立比書':'腓','歌羅西書':'西','帖撒羅尼迦前書':'帖前','帖撒羅尼迦後書':'帖後',
+  '提摩太前書':'提前','提摩太後書':'提後','提多書':'多','腓利門書':'門','希伯來書':'來',
+  '雅各書':'雅','彼得前書':'彼前','彼得後書':'彼後','約翰一書':'約一','約翰二書':'約二',
+  '約翰三書':'約三','猶大書':'猶','啟示錄':'啟'
 };
 
 const maxChapters: Record<string, number> = {
@@ -46,8 +46,10 @@ const maxChapters: Record<string, number> = {
   '腓立比書':4,'歌羅西書':4,'帖撒羅尼迦前書':5,'帖撒羅尼迦後書':3,
   '提摩太前書':6,'提摩太後書':4,'提多書':3,'腓利門書':1,'希伯來書':13,
   '雅各書':5,'彼得前書':5,'彼得後書':3,'約翰一書':5,'約翰二書':1,
-  '約翰三書':1,'猶大書':1,'啟示錄':22,
+  '約翰三書':1,'猶大書':1,'啟示錄':22
 };
+
+const bibleBooksOrder = Object.keys(fullNameToShortName);
 
 export default function BiblePage() {
   const [book, setBook] = useState('創世記');
@@ -57,14 +59,12 @@ export default function BiblePage() {
   const [error, setError] = useState('');
   const [chapters, setChapters] = useState(50);
 
-  // 更新章節最大值
   useEffect(() => {
     const maxChap = maxChapters[book] || 50;
     setChapters(maxChap);
     if (chap > maxChap) setChap(1);
   }, [book]);
 
-  // 讀取經文
   useEffect(() => {
     const fetchBible = async () => {
       setLoading(true);
@@ -77,12 +77,17 @@ export default function BiblePage() {
           setLoading(false);
           return;
         }
-        const res = await fetch(`/bible/${shortName}.json`);
+        const fileName = `/bible/${shortName}.json`;
+        const res = await fetch(fileName);
         if (!res.ok) throw new Error('檔案不存在');
+
         const data: BibleResponse = await res.json();
         const chapterVerses = data.record.filter(v => v.chap === chap);
-        if (chapterVerses.length === 0) setError('找不到該章經文。');
-        else setVerses(chapterVerses);
+        if (chapterVerses.length === 0) {
+          setError('找不到該章經文。');
+        } else {
+          setVerses(chapterVerses);
+        }
       } catch (err) {
         console.error(err);
         setError('讀取本地聖經資料失敗。');
@@ -101,17 +106,27 @@ export default function BiblePage() {
   };
 
   const nextChapter = () => {
-    if (chap < chapters) setChap(chap + 1);
+    if (chap < chapters) {
+      setChap(chap + 1);
+    } else {
+      const idx = bibleBooksOrder.indexOf(book);
+      if (idx < bibleBooksOrder.length - 1) {
+        setBook(bibleBooksOrder[idx + 1]);
+        setChap(1);
+      }
+    }
   };
 
   const prevChapter = () => {
-    if (chap > 1) setChap(chap - 1);
+    if (chap > 1) {
+      setChap(chap - 1);
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6">
-      <h1 className="mt-4 text-3xl font-extrabold text-center mb-6 text-gold-600 dark:text-gold-400 drop-shadow-md">
-        請查詢書卷與章節
+      <h1 className="mt-4 text-3 font-extrabold text-center mb-6 text-gold-600 dark:text-gold-400 drop-shadow-md">
+        每天讀經會幸福哦
       </h1>
 
       {/* 控制列 */}
@@ -119,9 +134,9 @@ export default function BiblePage() {
         <select
           value={book}
           onChange={(e) => handleBookSelect(e.target.value)}
-          className="flex-1 p-2 border rounded dark:bg-gray-800 dark:text-gray-200"
+          className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
         >
-          {Object.keys(fullNameToShortName).map((b) => (
+          {bibleBooksOrder.map((b) => (
             <option key={b} value={b}>{b}</option>
           ))}
         </select>
@@ -129,7 +144,7 @@ export default function BiblePage() {
         <select
           value={chap}
           onChange={(e) => setChap(Number(e.target.value))}
-          className="w-20 p-2 border rounded dark:bg-gray-800 dark:text-gray-200"
+          className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
         >
           {Array.from({ length: chapters }, (_, i) => i + 1).map((c) => (
             <option key={c} value={c}>{c}</option>
@@ -137,22 +152,15 @@ export default function BiblePage() {
         </select>
 
         <button
-          onClick={() => setChap(chap)}
-          className="px-4 py-2 bg-gold-600 dark:bg-gold-500 text-white rounded hover:bg-gold-500 dark:hover:bg-gold-400 transition font-semibold"
-        >
-          查詢
-        </button>
-
-        <button
           onClick={prevChapter}
-          className="px-3 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-400 dark:from-yellow-500 dark:to-orange-600 text-white font-semibold hover:shadow-lg transition"
         >
           上一章
         </button>
 
         <button
           onClick={nextChapter}
-          className="px-3 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-400 dark:from-yellow-500 dark:to-orange-600 text-white font-semibold hover:shadow-lg transition"
         >
           下一章
         </button>
@@ -161,11 +169,11 @@ export default function BiblePage() {
       {loading && <p className="text-center text-gray-500">讀取中...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
-      <div className="bg-beige-50 dark:bg-gray-900 p-4 sm:p-6 rounded-xl shadow-lg leading-relaxed overflow-x-auto">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 leading-relaxed space-y-3 overflow-x-auto">
         {verses.length > 0 ? (
           <>
             <h2 className="text-center font-bold mb-4 text-xl text-gold-700 dark:text-gold-300 drop-shadow">
-              {verses[0].chineses} 第 {verses[0].chap} 章
+              {book} 第 {chap} 章
             </h2>
             <div className="space-y-2 text-gray-800 dark:text-gray-200">
               {verses.map((v) => (
