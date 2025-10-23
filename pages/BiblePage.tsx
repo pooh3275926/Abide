@@ -136,7 +136,7 @@ export default function BiblePage() {
     <select
       value={book}
       onChange={(e) => handleBookSelect(e.target.value)}
-      className="w-full max-w-[120px] sm:max-w-xs p-2 rounded-lg border-0 bg-white/50 dark:bg-black/20 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-gold-DEFAULT transition"
+      className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
     >
       {bibleBooksOrder.map((b) => (
         <option key={b} value={b}>{b}</option>
@@ -146,7 +146,7 @@ export default function BiblePage() {
     <select
       value={chap}
       onChange={(e) => setChap(Number(e.target.value))}
-      className="p-2 rounded-lg border-0 bg-white/50 dark:bg-black/20 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-gold-DEFAULT transition"
+      className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
     >
       {Array.from({ length: chapters }, (_, i) => i + 1).map((c) => (
         <option key={c} value={c}>{c}</option>
@@ -154,7 +154,7 @@ export default function BiblePage() {
     </select>
   </div>
 
-  {/* 第二列：上一章 / 下一章按鈕 */}
+  {/* 第二列：上一章 / 下一章 按鈕 */}
   <div className="flex items-center justify-center gap-4 flex-wrap sm:flex-nowrap">
     <button
       onClick={prevChapter}
@@ -175,6 +175,7 @@ export default function BiblePage() {
     </button>
   </div>
 </div>
+
 
 
       {loading && <p className="text-center text-gray-500">讀取中...</p>}
@@ -202,4 +203,5 @@ export default function BiblePage() {
     </div>
   );
 }
+
 
