@@ -24,7 +24,8 @@ const PrayerListPage: React.FC = () => {
             .filter(item => 
                 item.person.toLowerCase().includes(lowerCaseSearchTerm) ||
                 item.title.toLowerCase().includes(lowerCaseSearchTerm) ||
-                item.content.toLowerCase().includes(lowerCaseSearchTerm)
+                item.content.toLowerCase().includes(lowerCaseSearchTerm) ||
+                (item.godsResponse && item.godsResponse.toLowerCase().includes(lowerCaseSearchTerm))
             )
             .sort((a, b) => {
                 if(sortOrder === 'desc') {
@@ -164,6 +165,14 @@ const PrayerListPage: React.FC = () => {
                                         <div>
                                             <h3 className="text-lg font-bold">{item.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({item.person})</span></h3>
                                             <p className="mt-2 text-sm whitespace-pre-wrap">{item.content}</p>
+                                            {item.godsResponse && (
+                                                <div className="mt-3 pt-3 border-t border-beige-200/60 dark:border-gray-700/60">
+                                                    <p className="text-sm">
+                                                        <span className="font-semibold text-gold-dark dark:text-gold-light">神的回應：</span>
+                                                        <span className="whitespace-pre-wrap">{item.godsResponse}</span>
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex flex-col items-end space-y-2 ml-2 flex-shrink-0">
                                             {item.answered ? (
