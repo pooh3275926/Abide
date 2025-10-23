@@ -1,7 +1,7 @@
 // pages/PrayerListPage.tsx
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { PrayerItem } from '../types';
+import { PrayerItem, Comment } from '../types';
 import PrayerForm from '../components/PrayerForm';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -12,35 +12,126 @@ const PrayerListPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
-
-    // 新增狀態
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [filterStatus, setFilterStatus] = useState<'all' | 'unanswered' | 'answered' | 'commented' | 'liked'>('all');
+    
+    // State for comments
+    const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
+    const [newCommentText, setNewCommentText] = useState<Record<string, string>>({});
+    const [editingComment, setEditingComment] = useState<{ prayerId: string; commentId: string; text: string } | null>(null);
+    const [commentToDelete, setCommentToDelete] = useState<{ prayerId: string, commentId: string } | null>(null);
+
+    // Data migration for adding likes and comments to existing items
+    useEffect(() => {
+        const itemsNeedMigration = items.some(item => item.likes === undefined || item.comments === undefined);
+        if (itemsNeedMigration) {
+            setItems(prevItems => {
+                return prevItems.map(item => ({
+                    ...item,
+                    likes: item.likes ?? 0,
+                    liked: item.liked ?? false,
+                    comments: item.comments ?? [],
+                }));
+            });
+        }
+    }, []); // Run only once
+
+    const handleToggleLike = (itemId: string) => {
+        setItems(prevItems => prevItems.map(item => {
+            if (item.id === itemId) {
+                const newLiked = !item.liked;
+                const newLikes = newLiked ? item.likes + 1 : item.likes - 1;
+                return { ...item, liked: newLiked, likes: newLikes };
+            }
+            return item;
+        }));
+    };
+
+    const handleToggleCommentSection = (itemId: string) => {
+        setExpandedCommentId(prevId => (prevId === itemId ? null : itemId));
+    };
+    
+    const handleAddComment = (e: React.FormEvent, itemId: string) => {
+        e.preventDefault();
+        const text = newCommentText[itemId]?.trim();
+        if (!text) return;
+
+        const newComment: Comment = {
+            id: crypto.randomUUID(),
+            text,
+            createdAt: new Date().toISOString(),
+        };
+
+        setItems(prev => prev.map(item => {
+            if (item.id === itemId) {
+                return { ...item, comments: [...(item.comments || []), newComment] };
+            }
+            return item;
+        }));
+        setNewCommentText(prev => ({ ...prev, [itemId]: '' }));
+    };
+
+    const handleDeleteComment = (prayerId: string, commentId: string) => {
+        setItems(prev => prev.map(item => {
+            if (item.id === prayerId) {
+                return { ...item, comments: item.comments.filter(c => c.id !== commentId) };
+            }
+            return item;
+        }));
+    };
+    
+    const handleUpdateComment = () => {
+        if (!editingComment) return;
+        const { prayerId, commentId, text } = editingComment;
+        setItems(prev => prev.map(item => {
+            if (item.id === prayerId) {
+                return {
+                    ...item,
+                    comments: item.comments.map(c => c.id === commentId ? { ...c, text } : c)
+                };
+            }
+            return item;
+        }));
+        setEditingComment(null);
+    };
+
+    const filterPositions: Record<typeof filterStatus, string> = {
+        all: '0%',
+        unanswered: '100%',
+        answered: '200%',
+        commented: '300%',
+        liked: '400%',
+    };
 
     const filteredItems = useMemo(() => {
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
         return items
+            .filter(item => {
+                switch (filterStatus) {
+                    case 'answered': return item.answered;
+                    case 'unanswered': return !item.answered;
+                    case 'liked': return item.liked;
+                    case 'commented': return item.comments && item.comments.length > 0;
+                    case 'all':
+                    default:
+                        return true;
+                }
+            })
             .filter(item => 
                 item.person.toLowerCase().includes(lowerCaseSearchTerm) ||
                 item.title.toLowerCase().includes(lowerCaseSearchTerm) ||
                 item.content.toLowerCase().includes(lowerCaseSearchTerm) ||
                 (item.godsResponse && item.godsResponse.toLowerCase().includes(lowerCaseSearchTerm))
             )
-            .sort((a, b) => {
-                if(sortOrder === 'desc') {
-                    return b.prayerDate.localeCompare(a.prayerDate);
-                }
-                return a.prayerDate.localeCompare(b.prayerDate);
-            });
-    }, [items, searchTerm, sortOrder]);
+            .sort((a, b) => sortOrder === 'desc' ? b.prayerDate.localeCompare(a.prayerDate) : a.prayerDate.localeCompare(b.prayerDate));
+    }, [items, searchTerm, sortOrder, filterStatus]);
 
     const handleSave = useCallback((item: PrayerItem) => {
         setItems(prev => {
             const exists = prev.some(i => i.id === item.id);
-            if (exists) {
-                return prev.map(i => i.id === item.id ? item : i);
-            }
+            if (exists) return prev.map(i => i.id === item.id ? item : i);
             return [...prev, item];
         });
         setIsFormOpen(false);
@@ -71,11 +162,7 @@ const PrayerListPage: React.FC = () => {
     const handleToggleSelection = (id: string) => {
         setSelectedIds(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-            }
+            newSet.has(id) ? newSet.delete(id) : newSet.add(id);
             return newSet;
         });
     };
@@ -89,142 +176,126 @@ const PrayerListPage: React.FC = () => {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
+    const FilterButton: React.FC<{ label: string; status: typeof filterStatus; current: typeof filterStatus; onClick: (status: typeof filterStatus) => void; }> = ({ label, status, current, onClick }) => (
+        <button onClick={() => onClick(status)} className={`relative z-10 w-1/5 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none ${current === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
+    );
+
     return (
         <div>
+            {/* Controls */}
             <div className="flex justify-between items-center mb-6 gap-4">
                 {!isSelectMode ? (
                     <>
-                        <input
-                            type="text"
-                            placeholder="搜尋標題、對象或內容..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
-                        />
-                        <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">
-                            {sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}
-                        </button>
-                        <button onClick={() => setIsSelectMode(true)} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">
-                            多選
-                        </button>
-                        <button 
-                            onClick={() => { 
-                                setEditingItem(null); 
-                                setIsFormOpen(true); 
-                            }} 
-                            className="px-4 py-2 bg-gold-DEFAULT text-gray-900 dark:text-white rounded-lg shadow-md hover:bg-gold-dark transition-colors whitespace-nowrap"
-                        >
-                            新增
-                        </button>
+                        <input type="text" placeholder="搜尋標題、對象或內容..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-grow w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
+                        <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">{sortOrder === 'desc' ? '日期 🔽' : '日期 🔼'}</button>
+                        <button onClick={() => setIsSelectMode(true)} className="p-2 rounded-lg bg-beige-200 dark:bg-gray-700 whitespace-nowrap text-sm">多選</button>
+                        <button onClick={() => { setEditingItem(null); setIsFormOpen(true); }} className="px-4 py-2 bg-gold-DEFAULT text-gray-900 dark:text-white rounded-lg shadow-md hover:bg-gold-dark transition-colors whitespace-nowrap">新增</button>
                     </>
                 ) : (
                     <div className="w-full flex justify-between items-center p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
-                        <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">
-                            取消
-                        </button>
+                        <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">取消</button>
                         <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
-                        <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">
-                            刪除
-                        </button>
+                        <button onClick={() => handleDeleteRequest(selectedIds)} disabled={selectedIds.size === 0} className="px-3 py-2 text-sm rounded-lg bg-red-500 text-white disabled:bg-red-300">刪除</button>
                     </div>
                 )}
             </div>
+            
+            {/* Filter */}
+            {!isSelectMode && (
+                <div className="mb-6 flex justify-center">
+                    <div className="relative w-full max-w-lg mx-auto p-1 bg-beige-200 dark:bg-gray-700 rounded-full flex items-center">
+                        <span className="absolute top-1 bottom-1 left-1 w-1/5 bg-white dark:bg-gray-900 rounded-full shadow-md transition-transform duration-300 ease-in-out" style={{ transform: `translateX(${filterPositions[filterStatus]})` }} aria-hidden="true" />
+                        <FilterButton label="全部" status="all" current={filterStatus} onClick={setFilterStatus} />
+                        <FilterButton label="未應允" status="unanswered" current={filterStatus} onClick={setFilterStatus} />
+                        <FilterButton label="已應允" status="answered" current={filterStatus} onClick={setFilterStatus} />
+                        <FilterButton label="已留言" status="commented" current={filterStatus} onClick={setFilterStatus} />
+                        <FilterButton label="已按讚" status="liked" current={filterStatus} onClick={setFilterStatus} />
+                    </div>
+                </div>
+            )}
 
+            {/* Prayer List */}
             <div className="space-y-4">
-                {filteredItems.length === 0 ? (
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">{searchTerm ? '找不到禱告事項' : '開始禱告、讓神工作'}</p>
-                ) : (
-                    filteredItems.map(item => (
-                        <div 
-                            key={item.id} 
-                            className={`relative rounded-lg shadow-sm transition-all duration-300 ${item.answered ? 'bg-gold-light/60 dark:bg-gold-dark/40' : 'bg-beige-50 dark:bg-gray-800'} ${isSelectMode ? 'pl-10 cursor-pointer' : ''} ${selectedIds.has(item.id) ? 'ring-2 ring-gold-DEFAULT' : ''}`}
-                            onClick={() => isSelectMode && handleToggleSelection(item.id)}
-                            role={isSelectMode ? 'button' : undefined}
-                            tabIndex={isSelectMode ? 0 : -1}
-                            onKeyDown={(e) => {
-                                if (isSelectMode && e.key === 'Enter') {
-                                    handleToggleSelection(item.id);
-                                }
-                            }}
-                        >
-                            {isSelectMode && (
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <input 
-                                    type="checkbox"
-                                    className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark pointer-events-none"
-                                    checked={selectedIds.has(item.id)}
-                                    readOnly
-                                    tabIndex={-1}
-                                    aria-label={`Select prayer item: ${item.title}`}
-                                />
-                                </div>
-                            )}
-                            <div className="p-4 flex items-start">
-                                <div className="flex-grow">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="text-lg font-bold">{item.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({item.person})</span></h3>
-                                            <p className="mt-2 text-sm whitespace-pre-wrap">{item.content}</p>
-                                            {item.godsResponse && (
-                                                <div className="mt-3 pt-3 border-t border-beige-200/60 dark:border-gray-700/60">
-                                                    <p className="text-sm">
-                                                        <span className="font-semibold text-gold-dark dark:text-gold-light">神的回應：</span>
-                                                        <span className="whitespace-pre-wrap">{item.godsResponse}</span>
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col items-end space-y-2 ml-2 flex-shrink-0">
-                                            {item.answered ? (
-                                                <span title={`應允於 ${item.answeredDate}`} className="text-xl text-gold-dark dark:text-gold-light">✞ 神已應允</span>
-                                            ) : (
-                                                <span title="禱告中" className="text-xl text-gold-DEFAULT">🪶 願神垂聽</span>
-                                            )}
-                                            {!isSelectMode && (
-                                                <div className="flex gap-2">
-                                                    <button 
-                                                        onClick={(e) => { 
-                                                            e.stopPropagation(); 
-                                                            setEditingItem(item); 
-                                                            setIsFormOpen(true); 
-                                                        }} 
-                                                        className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded"
-                                                    >
-                                                        ᝰ 編輯
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => { 
-                                                            e.stopPropagation();
-                                                            handleDeleteRequest(new Set([item.id])); 
-                                                        }} 
-                                                        className="text-xs px-2 py-1 bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-200 rounded"
-                                                    >
-                                                        ✘ 刪除
-                                                    </button>
-                                                </div>
-                                            )}
+                {filteredItems.length === 0 ? <p className="text-center text-gray-500 dark:text-gray-400 py-8">{searchTerm ? '找不到禱告事項' : '沒有符合條件的禱告事項'}</p> : filteredItems.map(item => {
+                    const isCommentSectionExpanded = expandedCommentId === item.id;
+                    return (
+                        <div key={item.id} className={`rounded-lg shadow-sm overflow-hidden transition-all duration-300 ${item.answered ? 'bg-gold-light/60 dark:bg-gold-dark/40' : 'bg-beige-50 dark:bg-gray-800'} ${isSelectMode ? 'pl-10' : ''} ${selectedIds.has(item.id) ? 'ring-2 ring-gold-DEFAULT' : ''}`}>
+                            <div className={`cursor-pointer ${isSelectMode ? '' : 'pointer-events-none'}`} onClick={() => isSelectMode && handleToggleSelection(item.id)} role={isSelectMode ? 'button' : undefined} tabIndex={isSelectMode ? 0 : -1}>
+                                {isSelectMode && (<div className="absolute inset-y-0 left-0 flex items-center pl-3"><input type="checkbox" className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark pointer-events-none" checked={selectedIds.has(item.id)} readOnly tabIndex={-1} /></div>)}
+                                <div className="p-4 flex items-start pointer-events-auto">
+                                    <div className="flex-grow">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="text-lg font-bold">{item.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({item.person})</span></h3>
+                                                <p className="mt-2 text-sm whitespace-pre-wrap">{item.content}</p>
+                                                {item.godsResponse && (<div className="mt-3 pt-3 border-t border-beige-200/60 dark:border-gray-700/60"><p className="text-sm"><span className="font-semibold text-gold-dark dark:text-gold-light">神的回應：</span><span className="whitespace-pre-wrap">{item.godsResponse}</span></p></div>)}
+                                            </div>
+                                            <div className="flex flex-col items-end space-y-2 ml-2 flex-shrink-0">
+                                                {item.answered ? <span title={`應允於 ${item.answeredDate}`} className="text-xl text-gold-dark dark:text-gold-light">✞ 神已應允</span> : <span title="禱告中" className="text-xl text-gold-DEFAULT">🪶 願神垂聽</span>}
+                                                {!isSelectMode && (<div className="flex gap-2"><button onClick={(e) => { e.stopPropagation(); setEditingItem(item); setIsFormOpen(true); }} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">ᝰ 編輯</button><button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([item.id])); }} className="text-xs px-2 py-1 bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-200 rounded">✘ 刪除</button></div>)}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-3 py-3 px-4 border-t border-beige-200 dark:border-gray-700 flex justify-between">
+                            {/* Action Bar */}
+                            {!isSelectMode && (
+                                <div className="px-4 py-2 border-t border-b border-beige-200 dark:border-gray-700 flex items-center gap-6">
+                                    <button onClick={(e) => { e.stopPropagation(); handleToggleLike(item.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-all duration-200 ${item.liked ? 'text-red-500' : 'text-gray-400'}`} fill={item.liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
+                                        <span className="text-sm font-medium">{item.likes}</span>
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleToggleCommentSection(item.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gold-dark dark:hover:text-gold-light transition-colors duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-colors duration-200 ${item.comments?.length > 0 ? 'text-gold-dark dark:text-gold-light' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                        <span className="text-sm font-medium">{item.comments?.length || 0}</span>
+                                    </button>
+                                </div>
+                            )}
+
+                             {/* Comment Section */}
+                            {!isSelectMode && (
+                                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCommentSectionExpanded ? 'max-h-[500px]' : 'max-h-0'}`}>
+                                    <div className="p-4 space-y-4 bg-beige-100/50 dark:bg-gray-900/50">
+                                        {item.comments?.length > 0 ? item.comments.map(comment => (
+                                            <div key={comment.id} className="text-sm">
+                                                {editingComment?.commentId === comment.id ? (
+                                                    <div>
+                                                        <textarea value={editingComment.text} onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })} className="w-full p-2 text-sm rounded border bg-white dark:bg-gray-700" rows={2}/>
+                                                        <div className="flex gap-2 mt-1">
+                                                            <button onClick={handleUpdateComment} className="text-xs px-2 py-1 bg-green-200 dark:bg-green-800 rounded">儲存</button>
+                                                            <button onClick={() => setEditingComment(null)} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">取消</button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex justify-between items-start">
+                                                        <p className="whitespace-pre-wrap flex-grow pr-2">{comment.text}</p>
+                                                        <div className="flex-shrink-0 flex items-center gap-3">
+                                                            <button onClick={() => setEditingComment({ prayerId: item.id, commentId: comment.id, text: comment.text })} className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">ᝰ 編輯</button>
+                                                            <button onClick={() => setCommentToDelete({ prayerId: item.id, commentId: comment.id })} className="text-xs text-red-500 hover:text-red-700">✘ 刪除</button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )) : <p className="text-xs text-center text-gray-500">還沒有留言</p>}
+                                        <form onSubmit={(e) => handleAddComment(e, item.id)} className="flex gap-2 items-center">
+                                            <input type="text" placeholder="新增留言..." value={newCommentText[item.id] || ''} onChange={(e) => setNewCommentText(prev => ({ ...prev, [item.id]: e.target.value }))} className="w-full flex-grow p-2 text-sm rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
+                                            <button type="submit" className="px-3 py-2 text-sm bg-gold-DEFAULT text-black dark:text-white rounded-lg">➤</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+                             <div className="text-xs text-gray-500 dark:text-gray-400 py-3 px-4 border-t border-beige-200 dark:border-gray-700 flex justify-between">
                                 <span>禱告日: {item.prayerDate}</span>
                                 <span>已過天數: {calculateDaysPassed(item.prayerDate)} 天</span>
                             </div>
                         </div>
-                    ))
-                )}
+                    )
+                })}
             </div>
             
             {isFormOpen && <PrayerForm item={editingItem} onSave={handleSave} onCancel={() => setIsFormOpen(false)} />}
-
-            {showConfirmation && (
-                <ConfirmationModal
-                    message={`您確定要刪除這 ${itemsToDelete.size} 個禱告事項嗎？此操作無法恢復。`}
-                    onConfirm={handleConfirmDelete}
-                    onCancel={handleCancelDelete}
-                />
-            )}
+            {showConfirmation && <ConfirmationModal message={`您確定要刪除這 ${itemsToDelete.size} 個禱告事項嗎？此操作無法恢復。`} onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
+            {commentToDelete && <ConfirmationModal message="您確定要刪除這則留言嗎？" onConfirm={() => { handleDeleteComment(commentToDelete.prayerId, commentToDelete.commentId); setCommentToDelete(null); }} onCancel={() => setCommentToDelete(null)} />}
         </div>
     );
 };
