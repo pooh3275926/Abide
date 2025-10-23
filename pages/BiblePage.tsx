@@ -1,6 +1,7 @@
 // pages/BiblePage.tsx
 import { useState, useEffect } from 'react';
-import './BiblePage.css';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import './BiblePage.css'; // CSS 放在同資料夾
 
 type BibleVerse = {
   chineses: string;
@@ -146,4 +147,5 @@ export default function BiblePage() {
     </div>
   );
 }
+
 
