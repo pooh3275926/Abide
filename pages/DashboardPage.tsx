@@ -237,7 +237,13 @@ const INeedYouPage: React.FC = () => {
             </>
           ) : (
             <>
-              <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">
+              <button 
+                onClick={() => {
+                  setIsSelectMode(false)
+                  setSelectedIds(new Set());
+                }}  
+                className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600"
+              >
                 取消
               </button>
               <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
