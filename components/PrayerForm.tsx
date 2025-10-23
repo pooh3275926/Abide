@@ -15,6 +15,7 @@ const PrayerForm: React.FC<{
       content: '',
       prayerDate: new Date().toISOString().split('T')[0], // 預設為今天
       answered: false,
+      godsResponse: '',
     }
   );
 
@@ -53,6 +54,7 @@ const PrayerForm: React.FC<{
           <input type="text" name="title" placeholder="標題" value={formData.title} onChange={handleChange} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
           <input type="text" name="person" placeholder="禱告對象" value={formData.person} onChange={handleChange} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
           <textarea name="content" placeholder="內容" value={formData.content} onChange={handleChange} rows={4} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
+          <textarea name="godsResponse" placeholder="神怎麼說？" value={formData.godsResponse || ''} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
           <input type="date" name="prayerDate" value={formData.prayerDate} onChange={handleChange} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
           <div className="flex items-center">
             <input type="checkbox" id="answered" name="answered" checked={formData.answered} onChange={handleChange} className="h-4 w-4 rounded" />
