@@ -77,7 +77,7 @@ const JournalForm: React.FC<{
   );
 };
 
-type FilterStatus = 'all' | 'commented' | 'liked';
+type FilterStatus = 'all' | 'commented' | 'liked' | 'pendingMeditation'; // 新增待靈修狀態
 
 const JournalPage: React.FC = () => {
   const [entries, setEntries] = useLocalStorage<JournalEntry[]>('journalEntries', []);
@@ -87,7 +87,7 @@ const JournalPage: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
+  const [itemsToDelete, setItemsToDelete] = new Set<string>();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -203,6 +203,7 @@ const JournalPage: React.FC = () => {
         switch (filterStatus) {
             case 'liked': return entry.liked;
             case 'commented': return entry.comments && entry.comments.length > 0;
+            case 'pendingMeditation': return !entry.highlights || entry.highlights.trim() === ''; // 新增待靈修過濾
             default: return true;
         }
       })
@@ -300,9 +301,10 @@ const JournalPage: React.FC = () => {
     setExpandedEntryId(prev => (prev === id ? null : id));
   };
   
-  const filterPositions: Record<FilterStatus, string> = { all: '0%', commented: '100%', liked: '200%' };
+  // 更新 filterPositions 以包含新的待靈修按鈕
+  const filterPositions: Record<FilterStatus, string> = { all: '0%', commented: '100%', liked: '200%', pendingMeditation: '300%' };
   const FilterButton: React.FC<{ label: string; status: FilterStatus }> = ({ label, status }) => (
-    <button onClick={() => setFilterStatus(status)} className={`relative z-10 w-1/3 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none ${filterStatus === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
+    <button onClick={() => setFilterStatus(status)} className={`relative z-10 w-1/4 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none ${filterStatus === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
   );
 
   return (
@@ -326,11 +328,12 @@ const JournalPage: React.FC = () => {
 
       {!isSelectMode && (
         <div className="flex items-center justify-center gap-4 mb-6">
-          <div className="relative w-full max-w-xs p-1 bg-beige-200 dark:bg-gray-700 rounded-full flex items-center">
-            <span className="absolute top-1 bottom-1 left-1 w-1/3 bg-white dark:bg-gray-900 rounded-full shadow-md transition-transform duration-300 ease-in-out" style={{ transform: `translateX(${filterPositions[filterStatus]})` }} aria-hidden="true" />
+          <div className="relative w-full max-w-xl p-1 bg-beige-200 dark:bg-gray-700 rounded-full flex items-center">
+            <span className="absolute top-1 bottom-1 left-1 w-1/4 bg-white dark:bg-gray-900 rounded-full shadow-md transition-transform duration-300 ease-in-out" style={{ transform: `translateX(${filterPositions[filterStatus]})` }} aria-hidden="true" />
             <FilterButton label="全部" status="all" />
             <FilterButton label="已留言" status="commented" />
             <FilterButton label="已按讚" status="liked" />
+            <FilterButton label="待靈修" status="pendingMeditation" /> {/* 新增待靈修按鈕 */}
           </div>
           <select value={selectedBookFilter} onChange={e => setSelectedBookFilter(e.target.value)} className="p-2 text-xs sm:text-sm rounded-full border bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT">
             <option value="all">所有書卷</option>
