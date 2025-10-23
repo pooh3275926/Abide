@@ -94,11 +94,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const prompt = `
 生成一張福音卡片（繁體中文），JSON 格式如下：
 {
-  "verse": "經文",
+  "verse": "經文（書卷章節）",
   "message": "耶穌今日對你說的話",
   "prayer": "對應禱告"
 }
-請只回傳完整 JSON，不要額外文字。
+注意：
+1. verse 欄位請包含完整經文與章節，例如 "神愛世人（約翰福音3:16）"。
+2. message 與 prayer 請對應經文內容。
+3. 請只回傳完整 JSON，不要額外文字，也不要換行或注釋。
 `;
 
         const response = await ai.models.generateContent({
@@ -126,5 +129,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: err.message || 'AI 生成失敗' });
   }
 }
+
 
 
