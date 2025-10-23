@@ -148,23 +148,7 @@ const SmallGroupSharePage = () => {
                   <div className="p-4 pt-0 border-t border-beige-200 space-y-4">
                     <div className="mt-4">
                         <h4 className="mb-2 font-semibold text-gold-dark">討論題目</h4>
-                        <p className="whitespace-pre-wrap mt-1 text-sm">{share.topic}</p>
-                        {!isSelectMode && (
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              const topics = await generateTopics(scripture);
-                              if (topics.length > 0) {
-                                handleSave({ ...share, topic: topics.join('\n') });
-                              } else {
-                                alert('無法生成討論題目，請稍後再試。');
-                              }
-                            }}
-                            className="mt-2 px-4 py-1 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-                          >
-                            AI 生成討論題目
-                          </button>
-                        )}
+                        <p className="whitespace-pre-wrap mt-1 text-sm">{share.topic}</p>    
                     </div>
                      <div>
                         <h4 className="mb-2 font-semibold text-gold-dark">我的分享</h4>
@@ -185,3 +169,4 @@ const SmallGroupSharePage = () => {
 };
 
 export default SmallGroupSharePage;
+
