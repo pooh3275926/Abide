@@ -137,47 +137,50 @@ const prevChapter = () => {
       </h1>
 
 {/* 控制列 */}
-<div className="flex items-center justify-center gap-2 mb-6 flex-wrap sm:flex-nowrap">
-  {/* 書卷選單 */}
-  <select
-    value={book}
-    onChange={(e) => handleBookSelect(e.target.value)}
-    className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
-  >
-    {bibleBooksOrder.map((b) => (
-      <option key={b} value={b}>{b}</option>
-    ))}
-  </select>
+<div className="flex flex-col items-center justify-center gap-2 mb-6">
+  {/* 第一列：書卷選單 + 章節選單 */}
+  <div className="flex items-center justify-center gap-2 flex-wrap sm:flex-nowrap">
+    <select
+      value={book}
+      onChange={(e) => handleBookSelect(e.target.value)}
+      className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
+    >
+      {bibleBooksOrder.map((b) => (
+        <option key={b} value={b}>{b}</option>
+      ))}
+    </select>
 
-  {/* 章節選單 */}
-  <select
-    value={chap}
-    onChange={(e) => setChap(Number(e.target.value))}
-    className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
-  >
-    {Array.from({ length: chapters }, (_, i) => i + 1).map((c) => (
-      <option key={c} value={c}>{c}</option>
-    ))}
-  </select>
+    <select
+      value={chap}
+      onChange={(e) => setChap(Number(e.target.value))}
+      className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-lg transition"
+    >
+      {Array.from({ length: chapters }, (_, i) => i + 1).map((c) => (
+        <option key={c} value={c}>{c}</option>
+      ))}
+    </select>
+  </div>
 
-  {/* 上一章按鈕 */}
-  <button
-    onClick={prevChapter}
-    disabled={book === bibleBooksOrder[0] && chap === 1}
-    className="p-3 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-  >
-    上一章
-  </button>
+  {/* 第二列：上一章 / 下一章按鈕 */}
+  <div className="flex items-center justify-center gap-4 mt-2">
+    <button
+      onClick={prevChapter}
+      disabled={book === bibleBooksOrder[0] && chap === 1}
+      className="px-6 py-2 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+    >
+      上一章
+    </button>
 
-  {/* 下一章按鈕 */}
-  <button
-    onClick={nextChapter}
-    disabled={book === bibleBooksOrder[bibleBooksOrder.length - 1] && chap === maxChapters[bibleBooksOrder[bibleBooksOrder.length - 1]]}
-    className="p-3 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-  >
-    下一章
-  </button>
+    <button
+      onClick={nextChapter}
+      disabled={book === bibleBooksOrder[bibleBooksOrder.length - 1] && chap === maxChapters[bibleBooksOrder[bibleBooksOrder.length - 1]]}
+      className="px-6 py-2 rounded-full bg-beige-300 dark:bg-gray-700 text-black dark:text-gray-200 hover:bg-beige-300/80 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+    >
+      下一章
+    </button>
+  </div>
 </div>
+
 
       {loading && <p className="text-center text-gray-500">讀取中...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
@@ -204,6 +207,7 @@ const prevChapter = () => {
     </div>
   );
 }
+
 
 
 
