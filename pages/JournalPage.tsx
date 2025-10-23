@@ -59,7 +59,6 @@ const JournalForm: React.FC<{
           </div>
 
           <textarea name="highlights" placeholder="靈修亮光" value={formData.highlights} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
-
           <textarea name="godMessage" placeholder="神想告訴我什麼？" value={formData.godMessage} onChange={handleChange} rows={3} className="w-full p-2 rounded border bg-white dark:bg-gray-700" />
 
           <div className="flex items-center">
@@ -77,7 +76,7 @@ const JournalForm: React.FC<{
   );
 };
 
-type FilterStatus = 'all' | 'commented' | 'liked' | 'pendingMeditation'; // 新增待靈修狀態
+type FilterStatus = 'all' | 'commented' | 'liked' | 'pendingMeditation';
 
 const JournalPage: React.FC = () => {
   const [entries, setEntries] = useLocalStorage<JournalEntry[]>('journalEntries', []);
@@ -87,13 +86,11 @@ const JournalPage: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [itemsToDelete, setItemsToDelete] = new Set<string>();
+  const [itemsToDelete, setItemsToDelete] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // Filters and Comments state
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [selectedBookFilter, setSelectedBookFilter] = useState('all');
   const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
@@ -108,7 +105,6 @@ const JournalPage: React.FC = () => {
     if (itemsNeedMigration) {
       setEntries(prevEntries => {
         return prevEntries.map(entry => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { scriptureAnalysis, applicationHelper, prayer, ...rest } = entry as any;
           return {
             ...rest,
@@ -122,45 +118,25 @@ const JournalPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedCommentId) {
-      return;
-    }
-
+    if (!selectedCommentId) return;
     const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as HTMLElement;
-        if (!target.closest('[data-comment-container]')) {
-            setSelectedCommentId(null);
-        }
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-comment-container]')) setSelectedCommentId(null);
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    
-    return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [selectedCommentId]);
 
   const handleToggleLike = (entryId: string) => {
-    setEntries(prev => prev.map(entry => {
-        if (entry.id === entryId) {
-            const newLiked = !entry.liked;
-            const newLikes = newLiked ? entry.likes + 1 : entry.likes - 1;
-            return { ...entry, liked: newLiked, likes: newLikes };
-        }
-        return entry;
-    }));
+    setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, liked: !entry.liked, likes: entry.liked ? entry.likes - 1 : entry.likes + 1 } : entry));
   };
-  
-  const handleCommentClick = (commentId: string) => {
-    setSelectedCommentId(prevId => prevId === commentId ? null : commentId);
-  };
+
+  const handleCommentClick = (commentId: string) => setSelectedCommentId(prevId => prevId === commentId ? null : commentId);
 
   const handleToggleCommentSection = (entryId: string) => {
     setExpandedCommentId(prevId => {
       const newId = prevId === entryId ? null : entryId;
-      if (newId !== prevId) { // Reset selected comment if section changes
-        setSelectedCommentId(null);
-      }
+      if (newId !== prevId) setSelectedCommentId(null);
       return newId;
     });
   };
@@ -169,50 +145,35 @@ const JournalPage: React.FC = () => {
     e.preventDefault();
     const text = newCommentText[entryId]?.trim();
     if (!text) return;
-
     const newComment: Comment = { id: crypto.randomUUID(), text, createdAt: new Date().toISOString() };
-
-    setEntries(prev => prev.map(entry => 
-      entry.id === entryId ? { ...entry, comments: [...(entry.comments || []), newComment] } : entry
-    ));
+    setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, comments: [...(entry.comments || []), newComment] } : entry));
     setNewCommentText(prev => ({ ...prev, [entryId]: '' }));
   };
 
   const handleDeleteComment = (entryId: string, commentId: string) => {
-    setEntries(prev => prev.map(entry => 
-      entry.id === entryId ? { ...entry, comments: entry.comments.filter(c => c.id !== commentId) } : entry
-    ));
+    setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, comments: entry.comments.filter(c => c.id !== commentId) } : entry));
   };
-  
+
   const handleUpdateComment = () => {
     if (!editingComment) return;
     const { entryId, commentId, text } = editingComment;
-    setEntries(prev => prev.map(entry => 
-      entry.id === entryId 
-        ? { ...entry, comments: entry.comments.map(c => c.id === commentId ? { ...c, text } : c) } 
-        : entry
-    ));
+    setEntries(prev => prev.map(entry => entry.id === entryId ? { ...entry, comments: entry.comments.map(c => c.id === commentId ? { ...c, text } : c) } : entry));
     setEditingComment(null);
   };
-  
+
   const sortedEntries = useMemo(() => {
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
     return [...entries]
       .filter(entry => {
         if (selectedBookFilter !== 'all' && entry.book !== selectedBookFilter) return false;
         switch (filterStatus) {
-            case 'liked': return entry.liked;
-            case 'commented': return entry.comments && entry.comments.length > 0;
-            case 'pendingMeditation': return !entry.highlights || entry.highlights.trim() === ''; // 新增待靈修過濾
-            default: return true;
+          case 'liked': return entry.liked;
+          case 'commented': return entry.comments?.length > 0;
+          case 'pendingMeditation': return !entry.highlights?.trim();
+          default: return true;
         }
       })
-      .filter(entry => 
-        !lowerCaseSearchTerm ||
-        entry.book.toLowerCase().includes(lowerCaseSearchTerm) ||
-        String(entry.chapter).includes(lowerCaseSearchTerm) ||
-        entry.highlights.toLowerCase().includes(lowerCaseSearchTerm)
-      )
+      .filter(entry => !lowerCaseSearchTerm || entry.book.toLowerCase().includes(lowerCaseSearchTerm) || String(entry.chapter).includes(lowerCaseSearchTerm) || entry.highlights.toLowerCase().includes(lowerCaseSearchTerm))
       .sort((a, b) => sortOrder === 'desc' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date));
   }, [entries, searchTerm, sortOrder, filterStatus, selectedBookFilter]);
 
@@ -238,7 +199,6 @@ const JournalPage: React.FC = () => {
       const bookProgress = { ...(prev[entry.book] || {}) };
       if (entry.completed) bookProgress[entry.chapter] = true;
       else delete bookProgress[entry.chapter];
-
       if (Object.keys(bookProgress).length > 0) return { ...prev, [entry.book]: bookProgress };
       else {
         const newProgress = { ...prev };
@@ -274,7 +234,7 @@ const JournalPage: React.FC = () => {
         completedEntriesToDelete.forEach(entry => {
           if (newProgress[entry.book]) {
             delete newProgress[entry.book][entry.chapter];
-            if (Object.keys(newProgress[entry.book]).length === 0) delete newProgress[entry.book];
+            if (!Object.keys(newProgress[entry.book]).length) delete newProgress[entry.book];
           }
         });
         return newProgress;
@@ -297,11 +257,8 @@ const JournalPage: React.FC = () => {
     });
   };
 
-  const handleToggleExpand = (id: string) => {
-    setExpandedEntryId(prev => (prev === id ? null : id));
-  };
-  
-  // 更新 filterPositions 以包含新的待靈修按鈕
+  const handleToggleExpand = (id: string) => setExpandedEntryId(prev => prev === id ? null : id);
+
   const filterPositions: Record<FilterStatus, string> = { all: '0%', commented: '100%', liked: '200%', pendingMeditation: '300%' };
   const FilterButton: React.FC<{ label: string; status: FilterStatus }> = ({ label, status }) => (
     <button onClick={() => setFilterStatus(status)} className={`relative z-10 w-1/4 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none ${filterStatus === status ? 'text-gold-dark dark:text-gold-light' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>{label}</button>
@@ -309,6 +266,7 @@ const JournalPage: React.FC = () => {
 
   return (
     <div>
+      {/* 上方搜尋、排序、多選、新增 */}
       <div className="flex justify-between items-center mb-6 gap-4">
         {!isSelectMode ? (
           <>
@@ -326,6 +284,7 @@ const JournalPage: React.FC = () => {
         )}
       </div>
 
+      {/* 篩選區 */}
       {!isSelectMode && (
         <div className="flex items-center justify-center gap-4 mb-6">
           <div className="relative w-full max-w-xl p-1 bg-beige-200 dark:bg-gray-700 rounded-full flex items-center">
@@ -333,7 +292,7 @@ const JournalPage: React.FC = () => {
             <FilterButton label="全部" status="all" />
             <FilterButton label="已留言" status="commented" />
             <FilterButton label="已按讚" status="liked" />
-            <FilterButton label="待靈修" status="pendingMeditation" /> {/* 新增待靈修按鈕 */}
+            <FilterButton label="待靈修" status="pendingMeditation" />
           </div>
           <select value={selectedBookFilter} onChange={e => setSelectedBookFilter(e.target.value)} className="p-2 text-xs sm:text-sm rounded-full border bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-gold-DEFAULT focus:border-gold-DEFAULT">
             <option value="all">所有書卷</option>
@@ -342,117 +301,99 @@ const JournalPage: React.FC = () => {
         </div>
       )}
 
+      {/* 日記列表 */}
       <div className="space-y-4">
-        {sortedEntries.length > 0 ? (
-          sortedEntries.map(entry => {
-            const isExpanded = expandedEntryId === entry.id;
-            const isCommentSectionExpanded = expandedCommentId === entry.id;
-            return (
-              <div
-                key={entry.id}
-                className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 relative ${selectedIds.has(entry.id) ? 'ring-2 ring-gold-DEFAULT' : ''} ${isSelectMode ? 'cursor-pointer' : ''}`}
-                onClick={() => { if (isSelectMode) handleToggleSelection(entry.id); }}
-              >
-                {isSelectMode && (
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <input type="checkbox" className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark" checked={selectedIds.has(entry.id)} readOnly />
-                    </div>
-                )}
-                <div className={`${isSelectMode ? 'pl-10' : ''}`}>
-                    <div
-                      className="p-4 flex items-center gap-4"
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                          if (isSelectMode) {
-                              e.stopPropagation();
-                              handleToggleSelection(entry.id);
-                          } else {
-                              handleToggleExpand(entry.id);
-                          }
-                      }}
-                      onKeyDown={e => !isSelectMode && e.key === 'Enter' && handleToggleExpand(entry.id)}
-                      aria-expanded={isExpanded}
-                    >
-                        <div className="flex-grow">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">{entry.date}</p>
-                                    <h3 className="mt-1 text-lg font-bold">{entry.title}</h3>
-                                    {!isExpanded && <p className="mt-2 text-sm italic">"{entry.highlights.substring(0, 100)}{entry.highlights.length > 100 ? '...' : ''}"</p>}
-                                </div>
-                                {!isSelectMode && (
-                                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                        {entry.completed && <span title="已完成" className="text-xl">✓</span>}
-                                        <button onClick={e => { e.stopPropagation(); setEditingEntry(entry); setIsFormOpen(true); }} className="text-xl p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50" aria-label={`編輯日記 ${entry.book} ${entry.chapter}`}>ᝰ</button>
-                                        <button onClick={e => { e.stopPropagation(); handleDeleteRequest(new Set([entry.id])); }} className="text-xl p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50" aria-label={`刪除日記 ${entry.book} ${entry.chapter}`}>✘</button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    {isExpanded && (
-                      <div className="p-4 pt-0">
-                        <div className="border-t border-gray-200 dark:border-gray-700 text-sm space-y-2 pt-4">
-                            <p><strong></strong> <span className="whitespace-pre-wrap">{entry.highlights}</span></p>
-                            <p><strong className="block mt-4 mb-4 font-semibold text-gold-dark dark:text-gold-light">神想告訴我:</strong> <span className="whitespace-pre-wrap">{entry.godMessage}</span></p>
-                        </div>
+        {sortedEntries.length > 0 ? sortedEntries.map(entry => {
+          const isExpanded = expandedEntryId === entry.id;
+          const isCommentSectionExpanded = expandedCommentId === entry.id;
+          return (
+            <div key={entry.id} className={`bg-beige-50 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 relative ${selectedIds.has(entry.id) ? 'ring-2 ring-gold-DEFAULT' : ''} ${isSelectMode ? 'cursor-pointer' : ''}`} onClick={() => isSelectMode && handleToggleSelection(entry.id)}>
+              {isSelectMode && <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <input type="checkbox" className="h-5 w-5 rounded text-gold-dark focus:ring-gold-dark" checked={selectedIds.has(entry.id)} readOnly />
+              </div>}
+              <div className={`${isSelectMode ? 'pl-10' : ''}`}>
+                {/* Header */}
+                <div className="p-4 flex items-center gap-4" role="button" tabIndex={0} onClick={(e) => { if (!isSelectMode) handleToggleExpand(entry.id); }} onKeyDown={e => !isSelectMode && e.key === 'Enter' && handleToggleExpand(entry.id)} aria-expanded={isExpanded}>
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">{entry.date}</p>
+                        <h3 className="mt-1 text-lg font-bold">{entry.title}</h3>
+                        {!isExpanded && <p className="mt-2 text-sm italic">"{entry.highlights.substring(0, 100)}{entry.highlights.length > 100 ? '...' : ''}"</p>}
                       </div>
-                    )}
-                    {!isSelectMode && (
-                      <>
-                        <div className="px-4 py-2 border-t border-b border-beige-200 dark:border-gray-700 flex items-center gap-6">
-                            <button onClick={(e) => {e.stopPropagation(); handleToggleLike(entry.id)}} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-all duration-200 ${entry.liked ? 'text-red-500' : 'text-gray-400'}`} fill={entry.liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
-                                <span className="text-sm font-medium">{entry.likes}</span>
-                            </button>
-                            <button onClick={(e) => {e.stopPropagation(); handleToggleCommentSection(entry.id)}} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gold-dark dark:hover:text-gold-light transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-colors duration-200 ${entry.comments?.length > 0 ? 'text-gold-dark dark:text-gold-light' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                <span className="text-sm font-medium">{entry.comments?.length || 0}</span>
-                            </button>
+                      {!isSelectMode && (
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                          {entry.completed && <span title="已完成" className="text-xl">✓</span>}
+                          <button onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); setIsFormOpen(true); }} className="text-xl p-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50" aria-label={`編輯日記 ${entry.book} ${entry.chapter}`}>ᝰ</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(new Set([entry.id])); }} className="text-xl p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50" aria-label={`刪除日記 ${entry.book} ${entry.chapter}`}>✘</button>
                         </div>
-                        <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCommentSectionExpanded ? 'max-h-[500px]' : 'max-h-0'}`}>
-                            <div className="p-4 space-y-4 bg-beige-100/50 dark:bg-gray-900/50">
-                                {entry.comments?.length > 0 ? entry.comments.map(comment => (
-                                    <div key={comment.id} className="text-sm" data-comment-container>
-                                        {editingComment?.commentId === comment.id ? (
-                                            <div>
-                                                <textarea value={editingComment.text} onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })} className="w-full p-2 text-sm rounded border bg-white dark:bg-gray-700" rows={2}/>
-                                                <div className="flex gap-2 mt-1">
-                                                    <button onClick={handleUpdateComment} className="text-xs px-2 py-1 bg-green-200 dark:bg-green-800 rounded">儲存</button>
-                                                    <button onClick={() => setEditingComment(null)} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">取消</button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex justify-between items-start cursor-pointer" onClick={() => handleCommentClick(comment.id)}>
-                                                <p className="whitespace-pre-wrap flex-grow pr-2">{comment.text}</p>
-                                                {selectedCommentId === comment.id && (
-                                                    <div className="flex-shrink-0 flex items-center gap-3">
-                                                        <button onClick={(e) => { e.stopPropagation(); setEditingComment({ entryId: entry.id, commentId: comment.id, text: comment.text }); }} className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">ᝰ 編輯</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setCommentToDelete({ entryId: entry.id, commentId: comment.id }); }} className="text-xs text-red-500 hover:text-red-700">✘ 刪除</button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )) : <p className="text-xs text-center text-gray-500">還沒有留言</p>}
-                                <form onSubmit={(e) => handleAddComment(e, entry.id)} className="flex gap-2 items-center">
-                                    <input type="text" placeholder="新增留言..." value={newCommentText[entry.id] || ''} onChange={(e) => setNewCommentText(prev => ({ ...prev, [entry.id]: e.target.value }))} className="w-full flex-grow p-2 text-sm rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
-                                    <button type="submit" className="px-3 py-2 text-sm bg-gold-DEFAULT text-black dark:text-white rounded-lg">➤</button>
-                                </form>
-                            </div>
-                        </div>
-                      </>
-                    )}
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                {/* 日記內容 */}
+                {isExpanded && (
+                  <div className="p-4 pt-0 border-t border-gray-200 dark:border-gray-700 text-sm space-y-4">
+                    <p><strong></strong> <span className="whitespace-pre-wrap">{entry.highlights}</span></p>
+                    <p><strong className="block mt-4 mb-4 font-semibold text-gold-dark dark:text-gold-light">神想告訴我:</strong> <span className="whitespace-pre-wrap">{entry.godMessage}</span></p>
+                  </div>
+                )}
+
+                {/* 喜歡 & 留言 */}
+                {!isSelectMode && (
+                  <>
+                    <div className="px-4 py-2 border-t border-b border-beige-200 dark:border-gray-700 flex items-center gap-6">
+                      <button onClick={(e) => { e.stopPropagation(); handleToggleLike(entry.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-all duration-200 ${entry.liked ? 'text-red-500' : 'text-gray-400'}`} fill={entry.liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" /></svg>
+                        <span className="text-sm font-medium">{entry.likes}</span>
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); handleToggleCommentSection(entry.id); }} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gold-dark dark:hover:text-gold-light transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-colors duration-200 ${entry.comments?.length > 0 ? 'text-gold-dark dark:text-gold-light' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                        <span className="text-sm font-medium">{entry.comments?.length || 0}</span>
+                      </button>
+                    </div>
+
+                    <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCommentSectionExpanded ? 'max-h-[500px]' : 'max-h-0'}`}>
+                      <div className="p-4 space-y-4 bg-beige-100/50 dark:bg-gray-900/50">
+                        {entry.comments?.length > 0 ? entry.comments.map(comment => (
+                          <div key={comment.id} className="text-sm" data-comment-container>
+                            {editingComment?.commentId === comment.id ? (
+                              <div>
+                                <textarea value={editingComment.text} onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })} className="w-full p-2 text-sm rounded border bg-white dark:bg-gray-700" rows={2}/>
+                                <div className="flex gap-2 mt-1">
+                                  <button onClick={handleUpdateComment} className="text-xs px-2 py-1 bg-green-200 dark:bg-green-800 rounded">儲存</button>
+                                  <button onClick={() => setEditingComment(null)} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">取消</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-start cursor-pointer" onClick={() => handleCommentClick(comment.id)}>
+                                <p className="whitespace-pre-wrap flex-grow pr-2">{comment.text}</p>
+                                {selectedCommentId === comment.id && (
+                                  <div className="flex-shrink-0 flex items-center gap-3">
+                                    <button onClick={(e) => { e.stopPropagation(); setEditingComment({ entryId: entry.id, commentId: comment.id, text: comment.text }); }} className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">ᝰ 編輯</button>
+                                    <button onClick={(e) => { e.stopPropagation(); setCommentToDelete({ entryId: entry.id, commentId: comment.id }); }} className="text-xs text-red-500 hover:text-red-700">✘ 刪除</button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )) : <p className="text-xs text-center text-gray-500">還沒有留言</p>}
+                        <form onSubmit={(e) => handleAddComment(e, entry.id)} className="flex gap-2 items-center">
+                          <input type="text" placeholder="新增留言..." value={newCommentText[entry.id] || ''} onChange={(e) => setNewCommentText(prev => ({ ...prev, [entry.id]: e.target.value }))} className="w-full flex-grow p-2 text-sm rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600" />
+                          <button type="submit" className="px-3 py-2 text-sm bg-gold-DEFAULT text-black dark:text-white rounded-lg">➤</button>
+                        </form>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-            );
-          })
-        ) : (
-          <p className="text-gray-500 text-center mt-10">尚無任何日記，點擊新增開始記錄吧！</p>
-        )}
+            </div>
+          );
+        }) : <p className="text-gray-500 text-center mt-10">尚無任何日記，點擊新增開始記錄吧！</p>}
       </div>
 
+      {/* Form / Modal */}
       {isFormOpen && <JournalForm entry={editingEntry} onSave={handleSave} onCancel={() => { setIsFormOpen(false); setEditingEntry(null); }} />}
       {showConfirmation && <ConfirmationModal message={`確定要刪除 ${itemsToDelete.size} 筆日記嗎？`} onConfirm={handleConfirmDelete} onCancel={handleCancelDelete} />}
       {commentToDelete && <ConfirmationModal message="您確定要刪除這則留言嗎？" onConfirm={() => { handleDeleteComment(commentToDelete.entryId, commentToDelete.commentId); setCommentToDelete(null); }} onCancel={() => setCommentToDelete(null)} />}
