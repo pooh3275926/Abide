@@ -102,7 +102,9 @@ const JesusSaidPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'jesusSaidCard',
-          payload: {}
+          payload: {
+            excludeVerses: collectedCards.map((c) => c.verse),
+          },
         }),
       });
 
@@ -326,5 +328,6 @@ const JesusSaidPage: React.FC = () => {
     </div>
   );
 };
+
 
 export default JesusSaidPage;
