@@ -9,19 +9,19 @@ const PrayerForm: React.FC<{
 }> = ({ item, onSave, onCancel }) => {
   const [formData, setFormData] = useState<PrayerItem>(
     item || {
-      id: crypto.randomUUID(), // 使用 crypto.randomUUID() 產生唯一 ID
+      id: crypto.randomUUID(),
       title: '',
       person: '',
       content: '',
-      prayerDate: new Date().toISOString().split('T')[0], // 預設為今天
+      prayerDate: new Date().toISOString().split('T')[0],
       answered: false,
       godsResponse: '',
+      likes: 0,
+      liked: false,
+      comments: [],
     }
   );
 
-  // FIX: Safely handle checkbox and other input types.
-  // The original code tried to destructure `checked` from a target that could be a `HTMLTextAreaElement`, which does not have that property.
-  // This refactor uses a type guard to handle checkbox inputs separately and correctly, making the code type-safe.
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const target = e.target;
     const name = target.name;
@@ -31,8 +31,6 @@ const PrayerForm: React.FC<{
       setFormData(prev => ({
         ...prev,
         [name]: checked,
-        // 如果是 'answered' 勾選框被選中，則設置 answeredDate 為當天日期
-        // 如果被取消選中，則將 answeredDate 設為 undefined
         ...(name === 'answered'
           ? { answeredDate: checked ? new Date().toISOString().split('T')[0] : undefined }
           : {}),
