@@ -77,7 +77,7 @@ export default function BiblePage() {
         const res = await fetch(`/bible/${shortName}.json`);
         if (!res.ok) throw new Error('檔案不存在');
         const data: BibleResponse = await res.json();
-        const chapterVerses = data.record.filter(v => v.chap === chap);
+        const chapterVerses = data.record.filter(v => Number(v.chap) === chap);
         if (chapterVerses.length === 0) setError('找不到該章經文。');
         else {
           setAnimate(true);
@@ -146,3 +146,4 @@ export default function BiblePage() {
     </div>
   );
 }
+
