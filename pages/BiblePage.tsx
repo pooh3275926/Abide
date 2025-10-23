@@ -1,7 +1,6 @@
 // pages/BiblePage.tsx
 import { useState, useEffect } from 'react';
-import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import './BiblePage.css'; // CSS 放在同資料夾
+import './BiblePage.css';
 
 type BibleVerse = {
   chineses: string;
@@ -58,16 +57,14 @@ export default function BiblePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [chapters, setChapters] = useState(50);
-  const [direction, setDirection] = useState<'left' | 'right'>('right');
+  const [direction, setDirection] = useState<'left'|'right'>('right');
 
-  // 更新最大章節
   useEffect(() => {
     const maxChap = maxChapters[book] || 50;
     setChapters(maxChap);
     if (chap > maxChap) setChap(1);
   }, [book]);
 
-  // 讀取經文
   useEffect(() => {
     const fetchBible = async () => {
       setLoading(true);
@@ -75,25 +72,24 @@ export default function BiblePage() {
       setVerses([]);
       try {
         const shortName = fullNameToShortName[book];
-        if (!shortName) throw new Error('書卷名稱錯誤或不支援。');
+        if (!shortName) throw new Error('書卷名稱錯誤或不支援');
 
         const fileName = `${shortName}.json`;
         const res = await fetch(`/bible/${fileName}`);
         if (!res.ok) throw new Error('檔案不存在');
 
         const data: BibleResponse = await res.json();
-
-        // 過濾指定章節，強制 chap 為數字
-        const chapterVerses = data.record.filter(v => Number(v.chap) === chap);
-        if (chapterVerses.length === 0) setError('找不到該章經文。');
+        const chapterVerses = data.record.filter(v => v.chap === chap);
+        if (!chapterVerses.length) setError('找不到該章經文');
         else setVerses(chapterVerses);
       } catch (err) {
         console.error(err);
-        setError('讀取本地聖經資料失敗。');
+        setError('讀取本地聖經資料失敗');
       } finally {
         setLoading(false);
       }
     };
+
     fetchBible();
   }, [book, chap]);
 
@@ -103,12 +99,14 @@ export default function BiblePage() {
       setChap(chap - 1);
     }
   };
+
   const nextChap = () => {
     if (chap < chapters) {
       setDirection('right');
       setChap(chap + 1);
     }
   };
+
   const handleBookSelect = (value: string) => {
     if (fullNameToShortName[value]) {
       setBook(value);
@@ -122,7 +120,6 @@ export default function BiblePage() {
         請查詢書卷與章節
       </h1>
 
-      {/* 書卷與章節選擇 */}
       <div className="flex items-center justify-center gap-2 mb-4 flex-wrap sm:flex-nowrap">
         <input
           list="books"
@@ -148,7 +145,6 @@ export default function BiblePage() {
         </select>
       </div>
 
-      {/* 章節切換 */}
       <div className="flex items-center justify-center gap-4 mb-6">
         <button onClick={prevChap} className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
           ◀
@@ -162,19 +158,14 @@ export default function BiblePage() {
       {loading && <p className="text-center text-gray-500">讀取中...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
-      {/* 經文區動畫 */}
-      <TransitionGroup className="bg-beige-50 dark:bg-gray-900 p-6 rounded-2xl shadow-lg overflow-x-auto">
-        <CSSTransition key={`${book}-${chap}`} timeout={300} classNames={`slide-${direction}`}>
-          <div className="space-y-3 text-gray-800 dark:text-gray-200">
-            {verses.map(v => (
-              <p key={v.sec} className="p-3 rounded-lg hover:bg-yellow-50 dark:hover:bg-gray-700 transition shadow-sm">
-                <span className="font-semibold mr-2 text-gold-600 dark:text-gold-400">{v.sec}</span>
-                {v.bible_text}
-              </p>
-            ))}
-          </div>
-        </CSSTransition>
-      </TransitionGroup>
+      <div className={`bg-beige-50 dark:bg-gray-900 p-6 rounded-2xl shadow-lg overflow-x-auto verse-container ${direction}`}>
+        {verses.map(v => (
+          <p key={v.sec} className="p-3 rounded-lg hover:bg-yellow-50 dark:hover:bg-gray-700 transition shadow-sm verse-item">
+            <span className="font-semibold mr-2 text-gold-600 dark:text-gold-400">{v.sec}</span>
+            {v.bible_text}
+          </p>
+        ))}
+      </div>
     </div>
   );
 }
