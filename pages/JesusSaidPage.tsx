@@ -38,7 +38,7 @@ const CardPreview: React.FC<{
     >
       {/* 經文固定顯示、最多 9 行 */}
       <p
-        className="text-sm italic text-gold-dark dark:text-gold-light line-clamp-[8] overflow-hidden text-ellipsis break-words max-h-[11rem] leading-snug"
+        className="text-sm italic text-gold-dark dark:text-gold-light line-clamp-[5] overflow-hidden text-ellipsis break-words max-h-[11rem] leading-snug"
       >
         "{card.verse.split('（')[0]}"
       </p>
@@ -50,7 +50,7 @@ const CardPreview: React.FC<{
     {!isSelectMode && (
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="absolute top-1 right-1 text-lg text-red-500 bg-white/50 dark:bg-gray-900/50 rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+        className="absolute top-1 right-1 text-lg text-yellow-900 bg-white/50 dark:bg-gray-900/50 rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
         aria-label="刪除卡片"
       >
         &times;
@@ -261,7 +261,13 @@ const JesusSaidPage: React.FC = () => {
             </>
           ) : (
             <div className="w-full flex justify-between items-center p-2 bg-beige-200 dark:bg-gray-800 rounded-lg">
-              <button onClick={() => setIsSelectMode(false)} className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600">
+              <button 
+                onClick={() => {
+                  setIsSelectMode(false)
+                  setSelectedIds(new Set());
+                }} 
+                className="px-3 py-2 text-sm rounded-lg bg-gray-300 dark:bg-gray-600"
+              >
                 取消
               </button>
               <span className="font-bold text-sm">{`已選取 ${selectedIds.size} 項`}</span>
