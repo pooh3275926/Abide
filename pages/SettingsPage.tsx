@@ -1,10 +1,11 @@
 import React, { useState } from "react";
+import { JournalEntry } from "../types"; // 引入類型以供類型檢查
 
 const SettingsPage: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
 
-  // 📤 匯出資料（不含進度）
+  // 📤 匯出資料
   const handleExport = () => {
     try {
       const data = {
@@ -15,7 +16,8 @@ const SettingsPage: React.FC = () => {
         quickReadHistory: JSON.parse(localStorage.getItem("quickReadHistory") || "[]"),
         messageNotes: JSON.parse(localStorage.getItem("messageNotes") || "[]"),
         smallGroupShares: JSON.parse(localStorage.getItem("smallGroupShares") || "[]"),
-        gracePoints: JSON.parse(localStorage.getItem("gracePoints") || "0"), // 直接匯出恩典值
+        biblePlansProgress: JSON.parse(localStorage.getItem("biblePlansProgress") || "{}"),
+        gracePoints: JSON.parse(localStorage.getItem("gracePoints") || "0"),
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -50,58 +52,54 @@ const SettingsPage: React.FC = () => {
       const text = await file.text();
       const importedData = JSON.parse(text);
 
-      setImportStatus("正在合併資料...");
+      setImportStatus("正在處理資料...");
 
-      const itemKeys: (
-        | "journalEntries"
-        | "prayerItems"
-        | "situationalPrayers"
-        | "jesusSaidCards"
-        | "quickReadHistory"
-        | "messageNotes"
-        | "smallGroupShares"
-      )[] = [
-        "journalEntries",
-        "prayerItems",
-        "situationalPrayers",
-        "jesusSaidCards",
-        "quickReadHistory",
-        "messageNotes",
-        "smallGroupShares",
-      ];
+      // --- 規則 1 & 3: 覆蓋模式 (Grace Points & Bible Plans Progress) ---
+      if (typeof importedData.gracePoints === "number") {
+        localStorage.setItem("gracePoints", JSON.stringify(importedData.gracePoints));
+      }
+      if (importedData.biblePlansProgress) {
+        localStorage.setItem("biblePlansProgress", JSON.stringify(importedData.biblePlansProgress));
+      }
+
+      // --- 規則 2: 合併模式 (日記、禱告等主要資料) ---
+      const itemKeys = [
+        "journalEntries", "prayerItems", "situationalPrayers", "jesusSaidCards",
+        "quickReadHistory", "messageNotes", "smallGroupShares",
+      ] as const;
+      
+      let finalJournalEntries: JournalEntry[] | null = null;
 
       itemKeys.forEach((key) => {
         const importedItems = importedData[key] || [];
         if (!Array.isArray(importedItems)) return;
 
-        // 直接覆蓋同 ID 項目，新增則加入
         const existingItems = JSON.parse(localStorage.getItem(key) || "[]");
         const mergedItemsMap = new Map(existingItems.map((item: any) => [item.id, item]));
         importedItems.forEach((item: any) => {
           if (item.id) mergedItemsMap.set(item.id, item);
         });
-        localStorage.setItem(key, JSON.stringify(Array.from(mergedItemsMap.values())));
+        
+        const mergedItems = Array.from(mergedItemsMap.values());
+        localStorage.setItem(key, JSON.stringify(mergedItems));
+        
+        // 儲存合併後的日記資料，以供後續計算進度
+        if (key === "journalEntries") {
+          finalJournalEntries = mergedItems as JournalEntry[];
+        }
       });
 
-      // 恩典值直接覆蓋
-      if (typeof importedData.gracePoints === "number") {
-        localStorage.setItem("gracePoints", JSON.stringify(importedData.gracePoints));
-      }
-
-      // ✅ 匯入日記後，自動更新聖經進度
-      if (Array.isArray(importedData.journalEntries)) {
-        const journalEntries = importedData.journalEntries;
+      // --- 規則 4: 根據合併後的日記，更新聖經進度 ---
+      if (finalJournalEntries) {
         const progress: Record<string, Record<string, boolean>> = {};
-
-        journalEntries.forEach((entry: any) => {
+        finalJournalEntries.forEach((entry) => {
           if (entry.completed && entry.book && entry.chapter) {
             if (!progress[entry.book]) progress[entry.book] = {};
-            progress[entry.book][entry.chapter] = true;
+            progress[entry.book][String(entry.chapter)] = true;
           }
         });
-
         localStorage.setItem("bibleTrackerProgress", JSON.stringify(progress));
-        console.log("✅ 已根據日記同步更新 bibleTrackerProgress。");
+        console.log("✅ 已根據合併後的日記資料，同步更新聖經進度。");
       }
 
       setImportStatus("✅ 匯入成功！系統將於 2 秒後重新整理。");
@@ -132,7 +130,7 @@ const SettingsPage: React.FC = () => {
             <div>
               <h2 className="text-xl font-semibold">匯出資料</h2>
               <p className="text-sm text-gray-600 mt-1">
-                將您所有的靈修日記、禱告清單等資料，打包成一個 JSON 檔案下載備份（不含進度）。
+                將您所有的靈修日記、禱告清單等資料，打包成一個 JSON 檔案下載備份。
               </p>
             </div>
           </div>
@@ -153,16 +151,14 @@ const SettingsPage: React.FC = () => {
             <div>
               <h2 className="text-xl font-semibold">匯入資料</h2>
               <p className="text-sm text-gray-600 mt-1">
-                從備份檔案還原您的資料。匯入的資料將覆蓋恩典值，並增量 + 覆蓋其他資料。
-                進度會自動根據日記完成狀態更新。
+                從備份檔案還原您的資料。匯入將智慧合併您的紀錄，並根據您的日記更新聖經進度。
               </p>
             </div>
           </div>
 
-          {/* ⚠️ 小提示 */}
           <div className="flex items-center gap-2 p-3 bg-gold-light/30 text-gold-dark rounded-lg text-sm">
             <span className="text-lg">⚠️</span>
-            <p>匯入後，恩典值將直接覆蓋現有值，請確認後再操作。</p>
+            <p>恩典值與讀經計畫進度將被直接覆蓋，請確認後再操作。</p>
           </div>
 
           <label className="block w-full">

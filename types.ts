@@ -1,3 +1,4 @@
+
 export interface JournalEntry {
   id: string;
   date: string; // YYYY-MM-DD
@@ -83,4 +84,23 @@ export interface SmallGroupShare {
   verse: string;
   topic: string;
   myShare: string;
+}
+
+export interface BiblePlanDay {
+  day: number;
+  scripture: string;
+  title: string;
+  introduction: string;
+  scriptureText: string;
+  prayer: string;
+}
+
+export interface BiblePlan {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  days: BiblePlanDay[];
+  themeColor: string;
+  icon: string;
 }

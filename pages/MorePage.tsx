@@ -9,6 +9,7 @@ interface MorePageProps {
 const MorePage: React.FC<MorePageProps> = ({ setActivePage }) => {
   const moreItems: { page: Page; label: string; icon: string; description: string }[] = [
     { page: 'tracker', label: '聖經進度', icon: '📜', description: '追蹤您的讀經旅程' },
+    { page: 'biblePlans', label: '讀經計畫', icon: '🗓️', description: '跟隨主題計畫，深入神的話語' },
     { page: 'messageNotes', label: '信息筆記', icon: '✍️', description: '記錄講道、學習與心得' },
     { page: 'settings', label: '設定', icon: '⚙️', description: '匯入與匯出您的資料' },
   ];
@@ -32,7 +33,7 @@ const MorePage: React.FC<MorePageProps> = ({ setActivePage }) => {
                   <p className="text-sm text-gray-500">{item.description}</p>
                 </div>
                 <div className="ml-4 text-gray-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 T 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>

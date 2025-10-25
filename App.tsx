@@ -12,6 +12,7 @@ import BiblePage from './pages/BiblePage';
 import AIFunctionsPage from './pages/AIFunctionsPage';
 import MessageNotesPage from './pages/MessageNotesPage'; // Import the new page
 import SmallGroupSharePage from './pages/SmallGroupSharePage';
+import BiblePlansPage from './pages/BiblePlansPage'; // 導入新的讀經計畫頁面
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 
@@ -23,11 +24,12 @@ export type Page =
   | 'jesusSaid'
   | 'quickRead'
   | 'settings'
-  | 'more' // 新增 more
+  | 'more'
   | 'bible'
   | 'ai'
-  | 'messageNotes' // Add message notes page type
-  | 'smallGroup';
+  | 'messageNotes'
+  | 'smallGroup'
+  | 'biblePlans'; // 新增讀經計畫頁面類型
 
 const pageTitles: Record<Page, string> = {
   iNeedYou: '我需要祢',
@@ -40,8 +42,9 @@ const pageTitles: Record<Page, string> = {
   more: '更多',
   bible: '聖經',
   ai: 'AI 功能',
-  messageNotes: '信息筆記', // Add title for message notes page
+  messageNotes: '信息筆記',
   smallGroup: '小組分享',
+  biblePlans: '讀經計畫', // 新增讀經計畫標題
 };
 
 const App: React.FC = () => {
@@ -69,10 +72,12 @@ const App: React.FC = () => {
         return <BiblePage />;
       case 'ai':
         return <AIFunctionsPage setActivePage={setActivePage} />;
-      case 'messageNotes': // Add rendering case for message notes page
+      case 'messageNotes':
         return <MessageNotesPage />;
       case 'smallGroup':
         return <SmallGroupSharePage />;
+      case 'biblePlans': // 新增讀經計畫頁面的渲染邏輯
+        return <BiblePlansPage />;
       default:
         return <BiblePage />;
     }
