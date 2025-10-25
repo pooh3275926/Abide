@@ -337,7 +337,7 @@ const JournalPage: React.FC = () => {
                 {/* 日記內容 */}
                 {isExpanded && (
                   <div className="p-4 pt-0 border-t border-gray-200 text-sm space-y-4">
-                    <p><strong></strong> <span className="whitespace-pre-wrap">{entry.highlights}</span></p>
+                    <p className="mt-4"><strong></strong> <span className="whitespace-pre-wrap">{entry.highlights}</span></p>
                     <p><strong className="block mt-4 mb-4 font-semibold text-gold-dark">神想告訴我:</strong> <span className="whitespace-pre-wrap">{entry.godMessage}</span></p>
                   </div>
                 )}
@@ -404,3 +404,4 @@ const JournalPage: React.FC = () => {
 };
 
 export default JournalPage;
+
