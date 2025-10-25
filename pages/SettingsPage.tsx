@@ -4,7 +4,7 @@ const SettingsPage: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
 
-  // 📤 匯出資料
+  // 📤 匯出資料（不含進度）
   const handleExport = () => {
     try {
       const data = {
@@ -15,7 +15,7 @@ const SettingsPage: React.FC = () => {
         quickReadHistory: JSON.parse(localStorage.getItem("quickReadHistory") || "[]"),
         messageNotes: JSON.parse(localStorage.getItem("messageNotes") || "[]"),
         smallGroupShares: JSON.parse(localStorage.getItem("smallGroupShares") || "[]"),
-        bibleTrackerProgress: JSON.parse(localStorage.getItem("bibleTrackerProgress") || "{}"),
+        gracePoints: JSON.parse(localStorage.getItem("gracePoints") || "0"), // 直接匯出恩典值
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -42,10 +42,8 @@ const SettingsPage: React.FC = () => {
     const fileInput = event.target;
     const file = fileInput.files?.[0];
 
-    if (!file) {
-      return;
-    }
-    
+    if (!file) return;
+
     fileInput.value = "";
     setIsImporting(true);
     setImportStatus("正在讀取檔案...");
@@ -67,37 +65,23 @@ const SettingsPage: React.FC = () => {
       ];
 
       itemKeys.forEach((key) => {
-        const existingItems = JSON.parse(localStorage.getItem(key) || "[]");
         const importedItems = importedData[key] || [];
+        if (!Array.isArray(importedItems)) return;
 
-        if (!Array.isArray(existingItems) || !Array.isArray(importedItems)) return;
-
-        const existingIds = new Set(existingItems.map((item: any) => item.id));
-        const newItems = importedItems.filter(
-          (item: any) => item.id && !existingIds.has(item.id)
-        );
-
-        if (newItems.length > 0) {
-          const merged = [...existingItems, ...newItems];
-          localStorage.setItem(key, JSON.stringify(merged));
-        }
+        // 直接覆蓋同 ID 項目，新增則加入
+        const existingItems = JSON.parse(localStorage.getItem(key) || "[]");
+        const mergedItemsMap = new Map(existingItems.map((item: any) => [item.id, item]));
+        importedItems.forEach((item: any) => {
+          if (item.id) mergedItemsMap.set(item.id, item);
+        });
+        localStorage.setItem(key, JSON.stringify(Array.from(mergedItemsMap.values())));
       });
 
-      if (importedData.bibleTrackerProgress) {
-        const existingProgress = JSON.parse(
-          localStorage.getItem("bibleTrackerProgress") || "{}"
-        );
-        const importedProgress = importedData.bibleTrackerProgress;
-        const mergedProgress = { ...existingProgress };
-
-        for (const book in importedProgress) {
-          if (!mergedProgress[book]) mergedProgress[book] = {};
-          mergedProgress[book] = { ...mergedProgress[book], ...importedProgress[book] };
-        }
-
-        localStorage.setItem("bibleTrackerProgress", JSON.stringify(mergedProgress));
+      // 恩典值直接覆蓋
+      if (typeof importedData.gracePoints === "number") {
+        localStorage.setItem("gracePoints", JSON.stringify(importedData.gracePoints));
       }
-      
+
       setImportStatus("✅ 匯入成功！系統將於 2 秒後重新整理。");
       setTimeout(() => window.location.reload(), 2000);
 
@@ -125,7 +109,7 @@ const SettingsPage: React.FC = () => {
             <div>
               <h2 className="text-xl font-semibold">匯出資料</h2>
               <p className="text-sm text-gray-600 mt-1">
-                將您所有的靈修日記、禱告清單、進度等資料，打包成一個 JSON 檔案下載備份。
+                將您所有的靈修日記、禱告清單等資料，打包成一個 JSON 檔案下載備份（不含進度）。
               </p>
             </div>
           </div>
@@ -138,16 +122,23 @@ const SettingsPage: React.FC = () => {
         </div>
         
         {/* Import Card */}
-        <div className="bg-beige-50 rounded-2xl shadow-lg p-6">
-          <div className="flex items-center gap-4 mb-4">
+        <div className="bg-beige-50 rounded-2xl shadow-lg p-6 space-y-4">
+          <div className="flex items-center gap-4 mb-2">
             <span className="text-3xl" aria-hidden="true">💻</span>
             <div>
               <h2 className="text-xl font-semibold">匯入資料</h2>
               <p className="text-sm text-gray-600 mt-1">
-                從備份檔案還原您的資料。匯入的資料將會與現有資料合併，而不是覆蓋。
+                從備份檔案還原您的資料。匯入的資料將覆蓋恩典值，並增量 + 覆蓋其他資料。進度會自動更新日記完成狀態。
               </p>
             </div>
           </div>
+
+          {/* ⚠️ 小提示 */}
+          <div className="flex items-center gap-2 p-3 bg-gold-light/30 text-gold-dark rounded-lg text-sm">
+            <span className="text-lg">⚠️</span>
+            <p>匯入後，恩典值將直接覆蓋現有值，請確認後再操作。</p>
+          </div>
+
           <label className="block w-full">
             <span className={`w-full py-3 px-4 bg-beige-200 rounded-lg font-semibold text-center cursor-pointer block transition hover:bg-beige-300 flex items-center justify-center gap-2 ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
               <span>選擇 JSON 備份檔</span>
@@ -178,4 +169,3 @@ const SettingsPage: React.FC = () => {
 };
 
 export default SettingsPage;
-
