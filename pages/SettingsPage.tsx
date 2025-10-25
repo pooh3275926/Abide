@@ -30,7 +30,6 @@ const SettingsPage: React.FC = () => {
 
       setImportStatus("✅ 匯出成功！");
       setTimeout(() => setImportStatus(""), 3000);
-
     } catch (error) {
       console.error(error);
       setImportStatus("❌ 匯出失敗，請稍後再試。");
@@ -41,7 +40,6 @@ const SettingsPage: React.FC = () => {
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileInput = event.target;
     const file = fileInput.files?.[0];
-
     if (!file) return;
 
     fileInput.value = "";
@@ -54,7 +52,15 @@ const SettingsPage: React.FC = () => {
 
       setImportStatus("正在合併資料...");
 
-      const itemKeys: ("journalEntries" | "prayerItems" | "situationalPrayers" | "jesusSaidCards" | "quickReadHistory" | "messageNotes" | "smallGroupShares")[] = [
+      const itemKeys: (
+        | "journalEntries"
+        | "prayerItems"
+        | "situationalPrayers"
+        | "jesusSaidCards"
+        | "quickReadHistory"
+        | "messageNotes"
+        | "smallGroupShares"
+      )[] = [
         "journalEntries",
         "prayerItems",
         "situationalPrayers",
@@ -82,9 +88,24 @@ const SettingsPage: React.FC = () => {
         localStorage.setItem("gracePoints", JSON.stringify(importedData.gracePoints));
       }
 
+      // ✅ 匯入日記後，自動更新聖經進度
+      if (Array.isArray(importedData.journalEntries)) {
+        const journalEntries = importedData.journalEntries;
+        const progress: Record<string, Record<string, boolean>> = {};
+
+        journalEntries.forEach((entry: any) => {
+          if (entry.completed && entry.book && entry.chapter) {
+            if (!progress[entry.book]) progress[entry.book] = {};
+            progress[entry.book][entry.chapter] = true;
+          }
+        });
+
+        localStorage.setItem("bibleTrackerProgress", JSON.stringify(progress));
+        console.log("✅ 已根據日記同步更新 bibleTrackerProgress。");
+      }
+
       setImportStatus("✅ 匯入成功！系統將於 2 秒後重新整理。");
       setTimeout(() => window.location.reload(), 2000);
-
     } catch (error) {
       console.error(error);
       setImportStatus(
@@ -105,7 +126,9 @@ const SettingsPage: React.FC = () => {
         {/* Export Card */}
         <div className="bg-beige-50 rounded-2xl shadow-lg p-6">
           <div className="flex items-center gap-4 mb-4">
-            <span className="text-3xl" aria-hidden="true">📩</span>
+            <span className="text-3xl" aria-hidden="true">
+              📩
+            </span>
             <div>
               <h2 className="text-xl font-semibold">匯出資料</h2>
               <p className="text-sm text-gray-600 mt-1">
@@ -120,15 +143,18 @@ const SettingsPage: React.FC = () => {
             <span>下載備份檔案</span>
           </button>
         </div>
-        
+
         {/* Import Card */}
         <div className="bg-beige-50 rounded-2xl shadow-lg p-6 space-y-4">
           <div className="flex items-center gap-4 mb-2">
-            <span className="text-3xl" aria-hidden="true">💻</span>
+            <span className="text-3xl" aria-hidden="true">
+              💻
+            </span>
             <div>
               <h2 className="text-xl font-semibold">匯入資料</h2>
               <p className="text-sm text-gray-600 mt-1">
-                從備份檔案還原您的資料。匯入的資料將覆蓋恩典值，並增量 + 覆蓋其他資料。進度會自動更新日記完成狀態。
+                從備份檔案還原您的資料。匯入的資料將覆蓋恩典值，並增量 + 覆蓋其他資料。
+                進度會自動根據日記完成狀態更新。
               </p>
             </div>
           </div>
@@ -140,7 +166,11 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <label className="block w-full">
-            <span className={`w-full py-3 px-4 bg-beige-200 rounded-lg font-semibold text-center cursor-pointer block transition hover:bg-beige-300 flex items-center justify-center gap-2 ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <span
+              className={`w-full py-3 px-4 bg-beige-200 rounded-lg font-semibold text-center cursor-pointer block transition hover:bg-beige-300 flex items-center justify-center gap-2 ${
+                isImporting ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
               <span>選擇 JSON 備份檔</span>
             </span>
             <input
@@ -153,14 +183,18 @@ const SettingsPage: React.FC = () => {
           </label>
         </div>
       </div>
-      
+
       {/* Status Message */}
       {importStatus && (
-        <div className={`mt-6 text-center text-sm p-3 rounded-lg transition-opacity duration-300 ${
-            importStatus.includes('成功') ? 'bg-green-100 text-green-800' :
-            importStatus.includes('失敗') ? 'bg-red-100 text-red-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
+        <div
+          className={`mt-6 text-center text-sm p-3 rounded-lg transition-opacity duration-300 ${
+            importStatus.includes("成功")
+              ? "bg-green-100 text-green-800"
+              : importStatus.includes("失敗")
+              ? "bg-red-100 text-red-800"
+              : "bg-blue-100 text-blue-800"
+          }`}
+        >
           <p>{importStatus}</p>
         </div>
       )}
