@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { BiblePlan, BiblePlanDay } from '../types';
@@ -16,6 +17,13 @@ const PlanCard: React.FC<{
     blue: { bg: 'bg-blue-50', accent: 'bg-blue-500', text: 'text-blue-800' },
     green: { bg: 'bg-green-50', accent: 'bg-green-500', text: 'text-green-800' },
     purple: { bg: 'bg-purple-50', accent: 'bg-purple-500', text: 'text-purple-800' },
+    rose: { bg: 'bg-rose-50', accent: 'bg-rose-500', text: 'text-rose-800' },
+    stone: { bg: 'bg-stone-50', accent: 'bg-stone-500', text: 'text-stone-800' },
+    slate: { bg: 'bg-slate-50', accent: 'bg-slate-500', text: 'text-slate-800' },
+    red: { bg: 'bg-red-50', accent: 'bg-red-500', text: 'text-red-800' },
+    amber: { bg: 'bg-amber-50', accent: 'bg-amber-500', text: 'text-amber-800' },
+    lime: { bg: 'bg-lime-50', accent: 'bg-lime-500', text: 'text-lime-800' },
+    teal: { bg: 'bg-teal-50', accent: 'bg-teal-500', text: 'text-teal-800' },
   };
   const theme = themeClasses[plan.themeColor] || themeClasses.blue;
 
