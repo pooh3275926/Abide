@@ -24,7 +24,7 @@ const PlanCard: React.FC<{
       <div>
         <p className={`font-bold text-xl ${theme.text}`}>{plan.title}</p>
         <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
-      </div
+      </div>
       <div className="mt-4">
         <div className="w-full bg-gray-200 rounded-full h-2.5">
           <div className={`${theme.accent} h-2.5 rounded-full`} style={{ width: `${progress}%` }}></div>
