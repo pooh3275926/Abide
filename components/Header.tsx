@@ -313,7 +313,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-10 p-4 bg-beige-200/80 backdrop-blur-sm shadow-md text-center">
+    <header className="fixed top-0 left-0 right-0 z-20 p-4 bg-beige-200 shadow-md text-center">
       <div className="flex justify-between items-center">
         <button
           onClick={handleGenerateVerse}
@@ -321,31 +321,24 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
           className="flex items-center gap-2 px-3 py-2 rounded-full bg-beige-300 focus:outline-none focus:ring-2 focus:ring-gold-DEFAULT disabled:opacity-50"
           aria-label="Generate a new random verse"
         >
-          <span>{isGeneratingVerse ? '↻' : '↻'}</span>
+          <span>{isGeneratingVerse ? '⟳' : '⟳'}</span>
         </button>
         <h1 className="text-xl font-bold text-gold-dark">{title}</h1>
-        <button
-          onClick={handleScrollToTop}
-          className="p-2 w-10 h-10 flex items-center justify-center rounded-full bg-beige-300 focus:outline-none focus:ring-0 active:outline-none"
-          aria-label="Scroll to top"
-        >
-          {'▲'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleScrollToTop}
+            className="p-2 w-10 h-10 flex items-center justify-center rounded-full bg-beige-300 focus:outline-none focus:ring-0 active:outline-none"
+            aria-label="Scroll to top"
+          >
+            {'▲'}
+          </button>
+        </div>
       </div>
-      <p className="mt-4 text-xs text-gray-600 mt-1 italic truncate" title={currentVerse}>
+      <p className="mt-2 text-xs text-gray-600 italic truncate" title={currentVerse}>
         {currentVerse}
       </p>
     </header>
   );
 };
 
-
 export default Header;
-
-
-
-
-
-
-
-
