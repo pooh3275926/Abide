@@ -42,13 +42,6 @@ export interface BibleBook {
   testament: 'Old' | 'New';
 }
 
-export interface SituationalPrayer {
-  id: string;
-  date: string; // YYYY-MM-DD
-  situation: string;
-  prayer: string;
-}
-
 export interface JesusSaidCard {
   id: string;
   date: string; // YYYY-MM-DD
@@ -57,12 +50,9 @@ export interface JesusSaidCard {
   prayer: string;
 }
 
-export interface QuickReadEntry {
-  id: string;
-  date: string; // YYYY-MM-DD
-  userInput: string; // The original input from the user
-  analysis: string;
-  application: string;
+export interface JesusSaidData {
+  verse: string;
+  message: string;
   prayer: string;
 }
 
@@ -103,4 +93,22 @@ export interface BiblePlan {
   days: BiblePlanDay[];
   themeColor: string;
   icon: string;
+}
+
+// FIX: Add SituationalPrayer type for use in DashboardPage (INeedYouPage).
+export interface SituationalPrayer {
+  id: string;
+  date: string; // YYYY-MM-DD
+  situation: string;
+  prayer: string;
+}
+
+// FIX: Add QuickReadEntry type for use in QuickReadPage.
+export interface QuickReadEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  userInput: string;
+  analysis: string;
+  application: string;
+  prayer: string;
 }
