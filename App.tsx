@@ -1,43 +1,50 @@
 
 import React, { useState } from 'react';
+import INeedYouPage from './pages/DashboardPage';
 import TrackerPage from './pages/TrackerPage';
 import JournalPage from './pages/JournalPage';
 import PrayerListPage from './pages/PrayerListPage';
 import JesusSaidPage from './pages/JesusSaidPage';
+import QuickReadPage from './pages/QuickReadPage';
 import SettingsPage from './pages/SettingsPage';
-import MorePage from './pages/MorePage';
+import MorePage from './pages/MorePage'; // 新增更多頁面
 import BiblePage from './pages/BiblePage';
-import MessageNotesPage from './pages/MessageNotesPage';
+import AIFunctionsPage from './pages/AIFunctionsPage';
+import MessageNotesPage from './pages/MessageNotesPage'; // Import the new page
 import SmallGroupSharePage from './pages/SmallGroupSharePage';
-import BiblePlansPage from './pages/BiblePlansPage';
+import BiblePlansPage from './pages/BiblePlansPage'; // 導入新的讀經計畫頁面
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 
-// FIX: Added 'ai', 'iNeedYou', and 'quickRead' to the Page type to resolve type errors in BottomNav.tsx.
 export type Page =
+  | 'iNeedYou'
   | 'tracker'
   | 'journal'
   | 'prayer'
   | 'jesusSaid'
+  | 'quickRead'
   | 'settings'
   | 'more'
   | 'bible'
+  | 'ai'
   | 'messageNotes'
   | 'smallGroup'
-  | 'biblePlans';
+  | 'biblePlans'; // 新增讀經計畫頁面類型
 
-// FIX: Added titles for the new pages to avoid runtime errors.
 const pageTitles: Record<Page, string> = {
+  iNeedYou: '我需要祢',
   tracker: '聖經進度',
   journal: '靈修日記',
   prayer: '禱告清單',
   jesusSaid: '耶穌說',
+  quickRead: '快速讀經',
   settings: '設定',
   more: '更多',
   bible: '聖經',
+  ai: 'AI 功能',
   messageNotes: '信息筆記',
   smallGroup: '小組分享',
-  biblePlans: '讀經計畫',
+  biblePlans: '讀經計畫', // 新增讀經計畫標題
 };
 
 const App: React.FC = () => {
@@ -45,6 +52,8 @@ const App: React.FC = () => {
 
   const renderPage = () => {
     switch (activePage) {
+      case 'iNeedYou':
+        return <INeedYouPage />;
       case 'tracker':
         return <TrackerPage />;
       case 'journal':
@@ -53,17 +62,21 @@ const App: React.FC = () => {
         return <PrayerListPage />;
       case 'jesusSaid':
         return <JesusSaidPage />;
+      case 'quickRead':
+        return <QuickReadPage />;
       case 'settings':
         return <SettingsPage />;
       case 'more':
         return <MorePage setActivePage={setActivePage} />;
       case 'bible':
         return <BiblePage />;
+      case 'ai':
+        return <AIFunctionsPage setActivePage={setActivePage} />;
       case 'messageNotes':
         return <MessageNotesPage />;
       case 'smallGroup':
         return <SmallGroupSharePage />;
-      case 'biblePlans':
+      case 'biblePlans': // 新增讀經計畫頁面的渲染邏輯
         return <BiblePlansPage />;
       default:
         return <BiblePage />;
