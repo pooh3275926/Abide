@@ -1,114 +1,97 @@
 
-export interface JournalEntry {
-  id: string;
-  date: string; // YYYY-MM-DD
-  book: string;
-  chapter: number;
-  // FIX: Added optional `verse` property to the JournalEntry type. This property is used in the JournalForm for user input and for creating the entry title, but was missing from the type definition, causing multiple errors.
-  verse?: string;
-  // FIX: Added optional `title` property to the JournalEntry type. A title is generated and added to the entry upon saving in JournalPage, but this property was missing from the type, causing a display error.
-  title?: string;
-  highlights: string;
-  godMessage: string;
-  completed: boolean;
-  likes: number;
-  liked: boolean;
-  comments: Comment[];
-}
+import React, { useState } from 'react';
+import INeedYouPage from './pages/DashboardPage';
+import TrackerPage from './pages/TrackerPage';
+import JournalPage from './pages/JournalPage';
+import PrayerListPage from './pages/PrayerListPage';
+import JesusSaidPage from './pages/JesusSaidPage';
+import QuickReadPage from './pages/QuickReadPage';
+import SettingsPage from './pages/SettingsPage';
+import MorePage from './pages/MorePage'; // 新增更多頁面
+import BiblePage from './pages/BiblePage';
+import AIFunctionsPage from './pages/AIFunctionsPage';
+import MessageNotesPage from './pages/MessageNotesPage'; // Import the new page
+import SmallGroupSharePage from './pages/SmallGroupSharePage';
+import BiblePlansPage from './pages/BiblePlansPage'; // 導入新的讀經計畫頁面
+import BottomNav from './components/BottomNav';
+import Header from './components/Header';
 
-export interface Comment {
-  id: string;
-  text: string;
-  createdAt: string; // ISO string for date
-}
+export type Page =
+  | 'iNeedYou'
+  | 'tracker'
+  | 'journal'
+  | 'prayer'
+  | 'jesusSaid'
+  | 'quickRead'
+  | 'settings'
+  | 'more'
+  | 'bible'
+  | 'ai'
+  | 'messageNotes'
+  | 'smallGroup'
+  | 'biblePlans'; // 新增讀經計畫頁面類型
 
-export interface PrayerItem {
-  id:string;
-  title:string;
-  person:string;
-  content:string;
-  prayerDate:string; // YYYY-MM-DD
-  answered:boolean;
-  answeredDate?:string; // YYYY-MM-DD
-  godsResponse?:string;
-  likes:number;
-  liked:boolean;
-  comments:Comment[];
-}
+const pageTitles: Record<Page, string> = {
+  iNeedYou: '我需要祢',
+  tracker: '聖經進度',
+  journal: '靈修日記',
+  prayer: '禱告清單',
+  jesusSaid: '耶穌說',
+  quickRead: '快速讀經',
+  settings: '設定',
+  more: '更多',
+  bible: '聖經',
+  ai: 'AI 功能',
+  messageNotes: '信息筆記',
+  smallGroup: '小組分享',
+  biblePlans: '讀經計畫', // 新增讀經計畫標題
+};
 
-export interface BibleBook {
-  name: string;
-  chapters: number;
-  testament: 'Old' | 'New';
-}
+const App: React.FC = () => {
+  const [activePage, setActivePage] = useState<Page>('bible');
 
-export interface JesusSaidCard {
-  id: string;
-  date: string; // YYYY-MM-DD
-  verse: string;
-  message: string;
-  prayer: string;
-}
+  const renderPage = () => {
+    switch (activePage) {
+      case 'iNeedYou':
+        return <INeedYouPage />;
+      case 'tracker':
+        return <TrackerPage />;
+      case 'journal':
+        return <JournalPage />;
+      case 'prayer':
+        return <PrayerListPage />;
+      case 'jesusSaid':
+        return <JesusSaidPage />;
+      case 'quickRead':
+        return <QuickReadPage />;
+      case 'settings':
+        return <SettingsPage />;
+      case 'more':
+        return <MorePage setActivePage={setActivePage} />;
+      case 'bible':
+        return <BiblePage />;
+      case 'ai':
+        return <AIFunctionsPage setActivePage={setActivePage} />;
+      case 'messageNotes':
+        return <MessageNotesPage />;
+      case 'smallGroup':
+        return <SmallGroupSharePage />;
+      case 'biblePlans': // 新增讀經計畫頁面的渲染邏輯
+        return <BiblePlansPage />;
+      default:
+        return <BiblePage />;
+    }
+  };
 
-export interface JesusSaidData {
-  verse: string;
-  message: string;
-  prayer: string;
-}
+  return (
+    <div className="min-h-screen font-sans text-gray-800 bg-beige-100">
+      <Header
+        title={pageTitles[activePage]}
+      />
+      <main className="pb-20 pt-24 px-4">{renderPage()}</main>
+      <BottomNav activePage={activePage} setActivePage={setActivePage} />
+    </div>
+  );
+};
 
-export interface MessageNote {
-  id: string;
-  date: string; // YYYY-MM-DD
-  title: string;
-  speaker: string;
-  content: string;
-  tags: string[];
-}
-
-export interface SmallGroupShare {
-  id: string;
-  date: string; // YYYY-MM-DD
-  groupName: string;
-  book: string;
-  chapter: number;
-  verse: string;
-  topic: string;
-  myShare: string;
-}
-
-export interface BiblePlanDay {
-  day: number;
-  scripture: string;
-  title: string;
-  introduction: string;
-  scriptureText: string;
-  prayer: string;
-}
-
-export interface BiblePlan {
-  id: string;
-  title: string;
-  description: string;
-  duration: number;
-  days: BiblePlanDay[];
-  themeColor: string;
-  icon: string;
-}
-
-// FIX: Add SituationalPrayer type for use in DashboardPage (INeedYouPage).
-export interface SituationalPrayer {
-  id: string;
-  date: string; // YYYY-MM-DD
-  situation: string;
-  prayer: string;
-}
-
-// FIX: Add QuickReadEntry type for use in QuickReadPage.
-export interface QuickReadEntry {
-  id: string;
-  date: string; // YYYY-MM-DD
-  userInput: string;
-  analysis: string;
-  application: string;
-  prayer: string;
-}
+export default App;
